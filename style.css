@@ -374,6 +374,171 @@ body {
 .num-positive { color: var(--color-success); font-weight: 700; }   /* gains — green up */
 .num-negative { color: var(--color-warning); font-weight: 700; }   /* losses — red down */
 
+/* ---------------- Coin counter + toast ---------------- */
+.coin-counter {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  border-radius: 999px;
+  padding: 4px 11px;
+}
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 92px;              /* above the mobile tab bar */
+  transform: translateX(-50%) translateY(12px);
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 60;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------------- Simulate tab ---------------- */
+/* :not([hidden]) so this never overrides the [hidden] display:none rule
+   (they'd otherwise have equal specificity and this one wins by order). */
+.panel.scrollable:not([hidden]) { display: block; overflow-y: auto; }
+.sim-inner {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 18px 16px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.sim-card, .sim-results {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 20px 18px;
+}
+.sim-title { margin: 0 0 4px; font-size: 22px; color: var(--color-text); }
+.sim-sub { margin: 0 0 18px; color: var(--color-text-muted); font-size: 14.5px; }
+
+.control { margin-bottom: 18px; }
+.control label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+.ctl-val {
+  color: var(--color-primary);
+  font-weight: 800;
+  font-size: 16px;
+}
+
+/* Range sliders — magenta thumb on a soft-pink track */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 3px solid #fff;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 3px solid #fff;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+.lev-hint {
+  margin: 10px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-soft);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+
+/* Big friendly run button */
+.run-btn {
+  width: 100%;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: var(--shadow);
+  transition: background 0.15s, transform 0.1s;
+}
+.run-btn:hover { background: var(--color-primary-dark); }
+.run-btn:active { transform: scale(0.98); }
+
+/* Results */
+.result-headline { text-align: center; margin-bottom: 12px; }
+.result-label { display: block; color: var(--color-text-muted); font-size: 14px; margin-bottom: 4px; }
+.result-value {
+  display: block;
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+.result-pl { display: block; margin-top: 4px; font-size: 18px; font-weight: 700; }
+
+.chart-wrap { margin: 6px 0 14px; }
+.sim-chart { width: 100%; height: auto; display: block; }
+
+.worst-note {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-warning);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 14px;
+  color: var(--color-text);
+  margin: 0 0 14px;
+}
+
+/* Margin-call teaching card — attention-getting but friendly */
+.margin-card {
+  background: var(--color-bg);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin: 0 0 14px;
+  box-shadow: var(--shadow);
+}
+.margin-card .mc-head { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+.margin-card .mc-icon { font-size: 20px; }
+.margin-card .mc-title { font-weight: 800; font-size: 15px; color: var(--color-primary); }
+.margin-card p { margin: 0 0 10px; font-size: 14px; color: var(--color-text); }
+.margin-card .mc-lesson { margin-bottom: 0; }
+
+.sim-disclaimer { margin: 0; font-size: 12px; color: var(--color-text-muted); text-align: center; }
+
 /* ---------------- Modal ---------------- */
 .modal-overlay {
   position: fixed; inset: 0;

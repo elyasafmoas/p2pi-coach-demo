@@ -15,6 +15,7 @@
       <span class="tagline">Invest, share, grow.</span>
     </div>
     <div class="header-right">
+      <span class="coin-counter" id="coin-counter" title="Your P2Pi coins">🪙 <b id="coin-count">0</b></span>
       <span class="demo-badge">DEMO</span>
       <button id="how-link" class="how-link" type="button">How this works</button>
     </div>
@@ -58,13 +59,54 @@
       </form>
     </section>
 
-    <!-- ---- Tab 2: Simulate (placeholder) ---- -->
-    <section class="panel placeholder" id="panel-simulate" role="tabpanel" hidden>
-      <div class="placeholder-card">
-        <div class="placeholder-emoji">📈</div>
-        <h2>Simulate</h2>
-        <p>Try investing pretend shekels and watch how the S&amp;P 500 moves — with zero real risk.</p>
-        <span class="soon-badge">Coming in the next step</span>
+    <!-- ---- Tab 2: Simulate (historical S&P 500 time machine) ---- -->
+    <section class="panel scrollable" id="panel-simulate" role="tabpanel" hidden>
+      <div class="sim-inner">
+
+        <!-- Friendly controls -->
+        <div class="sim-card">
+          <h2 class="sim-title">Time machine 📈</h2>
+          <p class="sim-sub">Pick an amount, a starting year, and how bold you want to be —
+            we'll replay real S&amp;P 500 history and show what would've happened.</p>
+
+          <div class="control">
+            <label for="amt">How much? <span class="ctl-val" id="amt-val">₪1,000</span></label>
+            <input type="range" id="amt" min="100" max="10000" step="100" value="1000" />
+          </div>
+
+          <div class="control">
+            <label for="year">Starting year <span class="ctl-val" id="year-val">2015</span></label>
+            <input type="range" id="year" min="1985" max="2024" step="1" value="2015" />
+          </div>
+
+          <div class="control">
+            <label for="lev">Leverage <span class="ctl-val" id="lev-val">1x</span></label>
+            <input type="range" id="lev" min="1" max="5" step="1" value="1" />
+            <p class="lev-hint" id="lev-hint" hidden>⚡ Leverage multiplies BOTH gains and losses.</p>
+          </div>
+
+          <button class="run-btn" id="run-btn" type="button">Show me what would've happened</button>
+        </div>
+
+        <!-- Results (revealed after a run) -->
+        <div class="sim-results" id="sim-results" hidden>
+          <div class="result-headline">
+            <span class="result-label">If you'd invested <span id="r-amount"></span> in <span id="r-year"></span>, today you'd have</span>
+            <span class="result-value num-key" id="r-final">₪0</span>
+            <span class="result-pl">
+              <span id="r-profit"></span> <span id="r-pct"></span>
+            </span>
+          </div>
+
+          <div class="chart-wrap" id="chart-wrap"></div>
+
+          <p class="worst-note" id="worst-note" hidden></p>
+          <div class="margin-card" id="margin-card" hidden></div>
+
+          <p class="sim-disclaimer">Simulated from approximate historical data, for learning
+            only — not a prediction and not advice.</p>
+        </div>
+
       </div>
     </section>
 
@@ -106,6 +148,12 @@
     </div>
   </div>
 
+  <!-- Coin "+N" toast -->
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="data/sp500_monthly.js"></script>
+  <script src="store.js"></script>
   <script src="app.js"></script>
+  <script src="simulate.js"></script>
 </body>
 </html>
