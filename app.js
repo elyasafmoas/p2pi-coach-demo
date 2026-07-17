@@ -310,6 +310,10 @@ async function handleSubmit(rawText) {
   addUserMessage(text);
   chipsEl.innerHTML = ""; // clear chips while the coach responds
 
+  // Reward curiosity: +1 P2Pi coin for every question asked (shared state).
+  P2Pi.addCoins(1);
+  if (typeof showCoinToast === "function") showCoinToast(1, false);
+
   // Brief pause + typing indicator so it feels like a live model thinking.
   const typing = showTyping();
   await wait(650 + Math.min(text.length * 8, 500));
@@ -389,12 +393,34 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") overlay.hidden = true;
 });
 
-// Kick things off: greet the user, then show starter chips.
-(async function init() {
+// First-visit hello card (Learn tab) — dismissible, shown once per browser.
+const helloCard = document.getElementById("hello-card");
+if (helloCard) {
+  if (!P2Pi.hasFlag("seen_hello")) helloCard.hidden = false;
+  document.getElementById("hello-dismiss").addEventListener("click", () => {
+    helloCard.hidden = true;
+    P2Pi.setFlag("seen_hello");
+  });
+}
+
+// "Reset demo" link inside the modal — clears coins + chat for the next student.
+document.getElementById("reset-link").addEventListener("click", () => {
+  P2Pi.reset();                         // wipe coins + one-time flags
+  chatEl.innerHTML = "";                // clear the conversation
+  overlay.hidden = true;                // close the modal
+  if (helloCard) helloCard.hidden = false; // re-greet the next student
+  startCoachConversation();             // fresh greeting + starter chips
+});
+
+// Greet the user, then show starter chips. Reusable so "Reset demo" can
+// start a clean conversation without a page reload.
+async function startCoachConversation() {
   const typing = showTyping();
   await wait(700);
   typing.remove();
   await streamCoachMessage(GREETING, null);
   renderChips(STARTER_CHIPS);
   inputEl.focus();
-})();
+}
+
+startCoachConversation();

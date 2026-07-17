@@ -39,6 +39,12 @@
 
     <!-- ---- Tab 1: Learn (the Coach chat) ---- -->
     <section class="panel active" id="panel-learn" role="tabpanel">
+      <!-- First-visit welcome (dismissible, shown once per browser) -->
+      <div class="hello-card" id="hello-card" hidden>
+        <button class="hello-dismiss" id="hello-dismiss" aria-label="Dismiss">&times;</button>
+        <span>Hi! I'm the P2Pi Coach 👋 Ask me anything about investing — then try the Simulator.</span>
+      </div>
+
       <main class="chat" id="chat" aria-live="polite">
         <!-- Messages injected by app.js -->
       </main>
@@ -110,13 +116,38 @@
       </div>
     </section>
 
-    <!-- ---- Tab 3: My Coins (placeholder) ---- -->
-    <section class="panel placeholder" id="panel-coins" role="tabpanel" hidden>
-      <div class="placeholder-card">
-        <div class="placeholder-emoji">🪙</div>
-        <h2>My Coins</h2>
-        <p>Earn coins for learning, track your progress, and unlock new lessons as you go.</p>
-        <span class="soon-badge">Coming in the next step</span>
+    <!-- ---- Tab 3: My Coins ---- -->
+    <section class="panel scrollable" id="panel-coins" role="tabpanel" hidden>
+      <div class="coins-inner">
+
+        <!-- Balance -->
+        <div class="coins-hero" id="coins-hero">
+          <div class="coins-emoji">🪙</div>
+          <div class="coins-balance" id="coins-balance">0</div>
+          <div class="coins-caption">P2Pi coins earned</div>
+        </div>
+
+        <!-- Earning rules recap -->
+        <div class="coins-card">
+          <h3>How you earn coins</h3>
+          <ul class="earn-list">
+            <li><span class="earn-amt">+1</span> for every question you ask the Coach</li>
+            <li><span class="earn-amt">+3</span> for each Simulator run</li>
+            <li><span class="earn-amt">+5</span> the first time you try leverage above 1x</li>
+          </ul>
+        </div>
+
+        <!-- Locked teaser: signals the community vision -->
+        <div class="coins-card locked">
+          <h3>Coming soon <span aria-hidden="true">🔒</span></h3>
+          <p class="locked-sub">Redeem coins for community perks</p>
+          <ul class="locked-list">
+            <li>🔒 Unlock advanced lessons</li>
+            <li>🔒 Join a study circle with classmates</li>
+            <li>🔒 Earn your "P2Pi Graduate" badge</li>
+          </ul>
+        </div>
+
       </div>
     </section>
 
@@ -145,6 +176,7 @@
         Our golden rule: <strong>the coach teaches how things work, but never tells you what
         to do with your money.</strong> That choice always stays with you.
       </p>
+      <button class="reset-link" id="reset-link" type="button">↺ Reset demo (clear coins &amp; chat)</button>
     </div>
   </div>
 
@@ -155,5 +187,6 @@
   <script src="store.js"></script>
   <script src="app.js"></script>
   <script src="simulate.js"></script>
+  <script src="coins.js"></script>
 </body>
 </html>

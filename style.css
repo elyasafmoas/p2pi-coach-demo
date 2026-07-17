@@ -64,6 +64,8 @@
 * { box-sizing: border-box; }
 
 html, body { margin: 0; height: 100%; }
+/* Never let anything cause a sideways scroll on a phone. */
+body { overflow-x: hidden; }
 
 body {
   background: var(--color-bg);
@@ -382,6 +384,14 @@ body {
   background: var(--color-primary-soft);
   border-radius: 999px;
   padding: 4px 11px;
+  display: inline-block;
+}
+/* Little pop whenever coins are added, anywhere in the app. */
+.bump { animation: bump 0.4s ease; }
+@keyframes bump {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35); }
+  100% { transform: scale(1); }
 }
 .toast {
   position: fixed;
@@ -538,6 +548,134 @@ input[type="range"]::-moz-range-thumb {
 .margin-card .mc-lesson { margin-bottom: 0; }
 
 .sim-disclaimer { margin: 0; font-size: 12px; color: var(--color-text-muted); text-align: center; }
+
+/* ---------------- First-visit hello card (Learn tab) ---------------- */
+.hello-card {
+  position: relative;
+  max-width: 760px;
+  width: calc(100% - 32px);
+  margin: 14px auto 0;
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 40px 12px 14px;
+  font-size: 14px;
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
+.hello-card[hidden] { display: none; }
+.hello-dismiss {
+  position: absolute;
+  top: 6px; right: 8px;
+  background: none; border: none;
+  font-size: 22px; line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.hello-dismiss:hover { color: var(--color-text); }
+
+/* ---------------- My Coins tab ---------------- */
+.coins-inner {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 18px 16px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.coins-hero {
+  position: relative;         /* anchor for the flying coins */
+  overflow: hidden;
+  text-align: center;
+  background: var(--color-primary-soft);
+  border-radius: var(--radius);
+  padding: 26px 18px;
+}
+.coins-emoji { font-size: 34px; }
+.coins-balance {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1.05;
+  color: var(--color-primary);
+  letter-spacing: -1px;
+}
+.coins-caption { color: var(--color-text-muted); font-size: 14px; font-weight: 600; }
+
+/* Flying coin animation on increase */
+.coin-fly {
+  position: absolute;
+  bottom: 40%;
+  font-size: 22px;
+  pointer-events: none;
+  animation: coinFly 1s ease-out forwards;
+}
+@keyframes coinFly {
+  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(-90px) scale(1.1); opacity: 0; }
+}
+
+.coins-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 18px;
+}
+.coins-card h3 { margin: 0 0 12px; font-size: 16px; color: var(--color-text); }
+.earn-list { list-style: none; margin: 0; padding: 0; }
+.earn-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14.5px;
+  color: var(--color-text);
+}
+.earn-list li:last-child { border-bottom: none; }
+.earn-amt {
+  flex: 0 0 auto;
+  min-width: 34px;
+  text-align: center;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+/* Locked "coming soon" teaser */
+.coins-card.locked { opacity: 0.85; }
+.locked-sub { margin: 0 0 12px; color: var(--color-text-muted); font-size: 14px; }
+.locked-list { list-style: none; margin: 0; padding: 0; }
+.locked-list li {
+  padding: 9px 12px;
+  margin-bottom: 8px;
+  background: var(--color-bg);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+.locked-list li:last-child { margin-bottom: 0; }
+
+/* Reset-demo link inside the modal */
+.reset-link {
+  display: inline-block;
+  margin-top: 8px;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px 0;
+}
+.reset-link:hover { color: var(--color-primary); }
 
 /* ---------------- Modal ---------------- */
 .modal-overlay {

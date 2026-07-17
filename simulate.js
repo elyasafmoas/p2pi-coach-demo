@@ -213,11 +213,15 @@ function countUp(el, target) {
   refreshLabels();
 
   runBtn.addEventListener("click", () => {
-    const result = runSimulationMath(+amt.value, +year.value, +lev.value);
+    const leverage = +lev.value;
+    const result = runSimulationMath(+amt.value, +year.value, leverage);
     renderResults(result);
-    // Reward exploration with coins (shared state; My Coins reads it later).
+
+    // Reward exploration with coins (shared state; My Coins reads it too).
     P2Pi.addCoins(COINS_PER_RUN);
-    showCoinToast(COINS_PER_RUN);
+    // One-time +5 bonus the first time a student tries leverage above 1x.
+    const bonus = leverage > 1 ? P2Pi.awardOnce("leverage_tried", 5) : 0;
+    showCoinToast(COINS_PER_RUN + bonus, bonus > 0);
   });
 
   function renderResults(r) {
@@ -276,18 +280,29 @@ function countUp(el, target) {
 })();
 
 /* ------------------------------------------------------------
-   Coin counter in the header + a small "+N coins" toast.
+   Coin counter in the header (pulses when the balance grows) + a
+   small "+N coins" toast. Shared globally so app.js can toast too.
    ------------------------------------------------------------ */
-(function initCoins() {
+(function initHeaderCoins() {
   const countEl = document.getElementById("coin-count");
-  if (countEl) P2Pi.onChange((n) => (countEl.textContent = n));
+  if (!countEl) return;
+  P2Pi.onChange((n, delta) => {
+    countEl.textContent = n;
+    if (delta > 0) {
+      countEl.parentElement.classList.remove("bump");
+      void countEl.parentElement.offsetWidth; // restart the CSS animation
+      countEl.parentElement.classList.add("bump");
+    }
+  });
 })();
 
 let toastTimer = null;
-function showCoinToast(n) {
+function showCoinToast(n, isBonus) {
   const toast = document.getElementById("toast");
-  if (!toast) return;
-  toast.textContent = `🪙 +${n} P2Pi coins!`;
+  if (!toast || n <= 0) return;
+  toast.textContent = isBonus
+    ? `🪙 +${n} coins! (first-leverage bonus)`
+    : `🪙 +${n} P2Pi coin${n === 1 ? "" : "s"}!`;
   toast.hidden = false;
   toast.classList.add("show");
   if (toastTimer) clearTimeout(toastTimer);

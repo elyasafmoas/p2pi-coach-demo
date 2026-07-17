@@ -1,44 +1,83 @@
 /* ============================================================
-   P2Pi shared state — a tiny store so tabs can share data.
-   Right now it holds the coin balance. Tab 3 ("My Coins") will read
-   from the same store later. Persists to localStorage so the balance
-   survives a refresh during a demo.
+   P2Pi shared state — a tiny store so all three tabs share data.
+   Holds the coin balance plus one-time "flags" (e.g. whether the
+   student has already earned the first-leverage bonus). Persists to
+   localStorage so everything survives a refresh during a demo.
    ============================================================ */
 window.P2Pi = (function () {
-  const KEY = "p2pi_coins";
+  const COINS_KEY = "p2pi_coins";
+  const FLAGS_KEY = "p2pi_flags";
 
-  // Read the saved balance (0 if none / storage unavailable, e.g. file://).
+  // Load saved balance + flags (safe if storage is blocked, e.g. file://).
   let coins = 0;
+  let flags = {};
   try {
-    coins = parseInt(localStorage.getItem(KEY) || "0", 10) || 0;
+    coins = parseInt(localStorage.getItem(COINS_KEY) || "0", 10) || 0;
+    flags = JSON.parse(localStorage.getItem(FLAGS_KEY) || "{}") || {};
   } catch (e) {
-    /* localStorage may be blocked — just keep an in-memory balance. */
+    /* keep in-memory defaults */
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(COINS_KEY, String(coins));
+      localStorage.setItem(FLAGS_KEY, JSON.stringify(flags));
+    } catch (e) {
+      /* ignore storage errors */
+    }
   }
 
   const listeners = [];
-  function notify() {
-    listeners.forEach((fn) => fn(coins));
+  // Notify with the new balance and how much it just changed by (delta),
+  // so views can play an animation only when coins actually increase.
+  function notify(delta) {
+    listeners.forEach((fn) => fn(coins, delta));
   }
 
   return {
     getCoins() {
       return coins;
     },
-    // Add coins (e.g. +3 for running a simulation) and let listeners react.
+
+    // Add coins (e.g. +1 per question, +3 per simulation).
     addCoins(n) {
       coins += n;
-      try {
-        localStorage.setItem(KEY, String(coins));
-      } catch (e) {
-        /* ignore storage errors */
-      }
-      notify();
+      save();
+      notify(n);
       return coins;
     },
-    // Subscribe to balance changes; called immediately with the current value.
+
+    // Award a bonus only the first time (guarded by a named flag).
+    // Returns the amount awarded (0 if it was already earned).
+    awardOnce(flagName, amount) {
+      if (flags[flagName]) return 0;
+      flags[flagName] = true;
+      coins += amount;
+      save();
+      notify(amount);
+      return amount;
+    },
+
+    hasFlag(name) {
+      return !!flags[name];
+    },
+    setFlag(name) {
+      flags[name] = true;
+      save();
+    },
+
+    // Subscribe to balance changes; called immediately with (coins, 0).
     onChange(fn) {
       listeners.push(fn);
-      fn(coins);
+      fn(coins, 0);
+    },
+
+    // Wipe everything for a clean demo with the next student.
+    reset() {
+      coins = 0;
+      flags = {};
+      save();
+      notify(0);
     },
   };
 })();
