@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>P2Pi Coach — GenAI Investment Coach (Demo)</title>
-  <meta name="description" content="P2Pi Coach — a GenAI investment coach that educates first-time Gen Z investors but never gives personal financial advice." />
+  <title>P2Pi Coach — Learn to Invest (Demo)</title>
+  <meta name="description" content="P2Pi Coach — a friendly GenAI coach that teaches young students how investing works, and never tells them what to buy." />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -12,64 +12,96 @@
   <header class="app-header">
     <div class="brand">
       <div class="logo">P2P<span class="pi">π</span></div>
-      <div class="brand-text">
-        <span class="tagline">Invest, share, grow.</span>
-      </div>
+      <span class="tagline">Invest, share, grow.</span>
     </div>
     <div class="header-right">
-      <span class="demo-badge" title="This coach is simulated for demo purposes.">
-        DEMO — simulated coach, not financial advice
-      </span>
-      <button id="how-link" class="how-link" type="button">How this demo works</button>
+      <span class="demo-badge">DEMO</span>
+      <button id="how-link" class="how-link" type="button">How this works</button>
     </div>
   </header>
 
-  <!-- ============ CHAT WINDOW ============ -->
-  <main class="chat" id="chat" aria-live="polite">
-    <!-- Messages are injected here by app.js -->
-  </main>
+  <!-- ============ TAB NAVIGATION (top on desktop, bottom on mobile) ============ -->
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Main sections">
+    <button class="tab active" data-tab="learn" role="tab" aria-selected="true">
+      <span class="tab-icon">💬</span><span class="tab-label">Learn</span>
+    </button>
+    <button class="tab" data-tab="simulate" role="tab" aria-selected="false">
+      <span class="tab-icon">📈</span><span class="tab-label">Simulate</span>
+    </button>
+    <button class="tab" data-tab="coins" role="tab" aria-selected="false">
+      <span class="tab-icon">🪙</span><span class="tab-label">My Coins</span>
+    </button>
+  </nav>
 
-  <!-- ============ SUGGESTION CHIPS ============ -->
-  <div class="chips" id="chips" aria-label="Suggested questions">
-    <!-- Chips are injected here by app.js -->
+  <!-- ============ TAB PANELS ============ -->
+  <div class="panels">
+
+    <!-- ---- Tab 1: Learn (the Coach chat) ---- -->
+    <section class="panel active" id="panel-learn" role="tabpanel">
+      <main class="chat" id="chat" aria-live="polite">
+        <!-- Messages injected by app.js -->
+      </main>
+
+      <div class="chips" id="chips" aria-label="Suggested questions">
+        <!-- Chips injected by app.js -->
+      </div>
+
+      <form class="composer" id="composer" autocomplete="off">
+        <input
+          type="text"
+          id="input"
+          class="composer-input"
+          placeholder="Ask the coach anything…"
+          aria-label="Message the coach"
+        />
+        <button type="submit" class="send-btn" id="send-btn" aria-label="Send">Send</button>
+      </form>
+    </section>
+
+    <!-- ---- Tab 2: Simulate (placeholder) ---- -->
+    <section class="panel placeholder" id="panel-simulate" role="tabpanel" hidden>
+      <div class="placeholder-card">
+        <div class="placeholder-emoji">📈</div>
+        <h2>Simulate</h2>
+        <p>Try investing pretend shekels and watch how the S&amp;P 500 moves — with zero real risk.</p>
+        <span class="soon-badge">Coming in the next step</span>
+      </div>
+    </section>
+
+    <!-- ---- Tab 3: My Coins (placeholder) ---- -->
+    <section class="panel placeholder" id="panel-coins" role="tabpanel" hidden>
+      <div class="placeholder-card">
+        <div class="placeholder-emoji">🪙</div>
+        <h2>My Coins</h2>
+        <p>Earn coins for learning, track your progress, and unlock new lessons as you go.</p>
+        <span class="soon-badge">Coming in the next step</span>
+      </div>
+    </section>
+
   </div>
 
-  <!-- ============ INPUT BAR ============ -->
-  <form class="composer" id="composer" autocomplete="off">
-    <input
-      type="text"
-      id="input"
-      class="composer-input"
-      placeholder="Ask the coach anything about investing…"
-      aria-label="Message the coach"
-    />
-    <button type="submit" class="send-btn" id="send-btn" aria-label="Send">
-      Send
-    </button>
-  </form>
-
-  <!-- ============ "HOW THIS DEMO WORKS" MODAL ============ -->
+  <!-- ============ "HOW THIS WORKS" MODAL ============ -->
   <div class="modal-overlay" id="modal-overlay" hidden>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
-      <h2 id="modal-title">How this demo works</h2>
+      <h2 id="modal-title">How this works</h2>
       <p>
-        This is a <strong>front-end-only prototype</strong>. Every coach reply is
-        <strong>scripted</strong> in a small JavaScript data file — there is no live model,
-        no backend, and no API keys. The "thinking…" pause and word-by-word reveal are
-        simulated to make it <em>feel</em> like a live LLM.
+        This is a <strong>friendly demo</strong> for the classroom. Every coach reply is
+        <strong>scripted</strong> — there's no live AI, no backend, and no accounts. The
+        "thinking…" pause and word-by-word reveal are simulated to make it <em>feel</em> like
+        a real AI coach.
       </p>
-      <p>In production, the same experience would be powered by:</p>
+      <p>In the real product, the same experience would use:</p>
       <ul>
-        <li><strong>An LLM</strong> for natural, plain-language conversation.</li>
-        <li><strong>RAG</strong> (retrieval-augmented generation) grounded in vetted,
-          compliance-approved financial-education content — so answers stay accurate and on-brand.</li>
-        <li><strong>A deterministic guardrail layer</strong> that classifies intent before the
-          model responds and hard-blocks personal advice.</li>
+        <li><strong>An AI model</strong> for natural, plain-language conversation.</li>
+        <li><strong>Trusted lesson content</strong> the AI is only allowed to teach from, so
+          answers stay accurate and safe.</li>
+        <li><strong>A safety layer</strong> that spots when someone is asking for personal
+          advice and steps in before answering.</li>
       </ul>
       <p class="principle">
-        Guardrail principle: <strong>the AI never moves money and never advises.</strong>
-        It teaches how things work; the decision always stays with the person.
+        Our golden rule: <strong>the coach teaches how things work, but never tells you what
+        to do with your money.</strong> That choice always stays with you.
       </p>
     </div>
   </div>

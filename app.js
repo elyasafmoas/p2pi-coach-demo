@@ -230,7 +230,8 @@ function streamCoachMessage(text, followUp) {
   });
 }
 
-// Render the distinct GUARDRAIL card (gold border, shield, reframe + chip).
+// Render the distinct GUARDRAIL card (friendly-protective: soft accent
+// border, shield, reframe + chip). Feels caring, not alarming.
 function renderGuardrail(reframe) {
   const row = document.createElement("div");
   row.className = "msg-row coach";
@@ -239,7 +240,7 @@ function renderGuardrail(reframe) {
     <div class="guardrail">
       <div class="gr-head">
         <span class="shield">🛡️</span>
-        <span class="gr-label">Guardrail: Education only — no personal advice</span>
+        <span class="gr-label">We teach, we don’t tell you what to buy</span>
       </div>
       <div class="gr-body"></div>
       <div class="gr-reframe"></div>
@@ -359,7 +360,25 @@ formEl.addEventListener("submit", (e) => {
   handleSubmit(inputEl.value);
 });
 
-// "How this demo works" modal
+// Tab switching: show one panel at a time, highlight the active tab.
+const tabButtons = document.querySelectorAll(".tab");
+tabButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const target = btn.dataset.tab; // "learn" | "simulate" | "coins"
+    tabButtons.forEach((b) => {
+      const on = b === btn;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    document.querySelectorAll(".panel").forEach((p) => {
+      p.hidden = p.id !== "panel-" + target;
+    });
+    // Re-focus the input when returning to the coach.
+    if (target === "learn") inputEl.focus();
+  });
+});
+
+// "How this works" modal
 const overlay = document.getElementById("modal-overlay");
 document.getElementById("how-link").addEventListener("click", () => (overlay.hidden = false));
 document.getElementById("modal-close").addEventListener("click", () => (overlay.hidden = true));

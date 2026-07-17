@@ -1,28 +1,53 @@
 /* ============================================================
    P2Pi Coach — styles
-   Brand: dark charcoal background, gold accents, clean sans-serif.
+   Student-friendly identity: soft pink + white, warm coral accents,
+   rounded corners, soft shadows, playful but clean. Mobile-first.
+
+   ALL colors live in :root below — switching the whole palette is a
+   one-line-per-variable change. A ready-made green alternative is
+   included (commented out) right underneath.
    ============================================================ */
 
 :root {
-  --bg:        #0f1012;   /* near-black page background */
-  --surface:   #17181c;   /* header / cards */
-  --surface-2: #1e2025;   /* coach bubble */
-  --gold:      #c9a227;   /* primary accent */
-  --gold-soft: #e0c15a;   /* lighter gold for hover */
-  --text:      #eceef2;   /* main text */
-  --text-dim:  #9aa0aa;   /* secondary text */
-  --user-bg:   #2a2c33;   /* user bubble */
-  --border:    #2b2d33;
-  --radius:    16px;
+  /* ---- ACTIVE PALETTE: soft pink & white ---- */
+  --bg:          #fff5f9;   /* page background (barely-pink) */
+  --surface:     #ffffff;   /* cards, header, coach bubble */
+  --surface-2:   #fff0f6;   /* subtle tinted surface */
+  --primary:     #f8bbd9;   /* soft pink — brand primary */
+  --primary-deep:#f48fb1;   /* deeper pink for borders/hover */
+  --accent:      #ff8a7a;   /* warm coral/peach accent */
+  --accent-soft: #ffd9cf;   /* light coral wash */
+  --user-bubble: #f8bbd9;   /* user chat bubble */
+  --text:        #3a3540;   /* dark gray main text */
+  --text-dim:    #8a828f;   /* secondary text */
+  --border:      #f4d6e4;   /* soft pink border */
+  --shadow:      0 8px 24px rgba(244, 143, 177, 0.18);
+  --shadow-sm:   0 3px 10px rgba(244, 143, 177, 0.14);
+  --radius:      20px;
+  --radius-sm:   14px;
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* ---- ALTERNATIVE PALETTE: mint green & white ----
+     To switch, comment out the pink block above and uncomment this:
+  --bg:          #f2fbf6;
+  --surface:     #ffffff;
+  --surface-2:   #eafaf1;
+  --primary:     #a8e6cf;
+  --primary-deep:#7fd6b0;
+  --accent:      #56c596;
+  --accent-soft: #cdf3e3;
+  --user-bubble: #a8e6cf;
+  --text:        #2f3a35;
+  --text-dim:    #7c8a82;
+  --border:      #cdeede;
+  --shadow:      0 8px 24px rgba(86, 197, 150, 0.18);
+  --shadow-sm:   0 3px 10px rgba(86, 197, 150, 0.14);
+  */
 }
 
 * { box-sizing: border-box; }
 
-html, body {
-  margin: 0;
-  height: 100%;
-}
+html, body { margin: 0; height: 100%; }
 
 body {
   background: var(--bg);
@@ -33,7 +58,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  height: 100dvh; /* better mobile viewport */
+  height: 100dvh;
 }
 
 /* ---------------- Header ---------------- */
@@ -54,80 +79,116 @@ body {
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.5px;
+  color: var(--text);
 }
-.logo .pi { color: var(--gold); }
+.logo .pi { color: var(--accent); }
 
-.tagline {
-  color: var(--text-dim);
-  font-size: 13px;
-}
+.tagline { color: var(--text-dim); font-size: 13px; }
 
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
+.header-right { display: flex; align-items: center; gap: 12px; }
 
 .demo-badge {
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  color: var(--gold);
-  border: 1px solid var(--gold);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #fff;
+  background: var(--accent);
   border-radius: 999px;
-  padding: 4px 10px;
-  white-space: nowrap;
+  padding: 4px 11px;
 }
 
 .how-link {
   background: none;
   border: none;
-  color: var(--text-dim);
+  color: var(--primary-deep);
   font-size: 13px;
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 3px;
   padding: 4px;
+  font-family: inherit;
 }
-.how-link:hover { color: var(--text); }
+.how-link:hover { color: var(--accent); }
 
-/* ---------------- Chat window ---------------- */
+/* ---------------- Tabs ---------------- */
+.tabs {
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  order: 3;            /* mobile-first: tabs sit at the BOTTOM */
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  gap: 6px;
+}
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 4px;
+  cursor: pointer;
+  color: var(--text-dim);
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+.tab-icon { font-size: 20px; line-height: 1; }
+.tab-label { font-size: 12px; font-weight: 600; }
+.tab.active { color: var(--accent); background: var(--surface-2); }
+.tab:hover:not(.active) { background: var(--surface-2); }
+
+/* ---------------- Panels ---------------- */
+.panels {
+  order: 2;
+  flex: 1;
+  min-height: 0;      /* let inner scroll areas work */
+  display: flex;
+  flex-direction: column;
+}
+.panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.panel[hidden] { display: none; }
+
+/* ---------------- Chat window (Learn tab) ---------------- */
 .chat {
   flex: 1;
   overflow-y: auto;
-  padding: 22px 16px 8px;
+  padding: 20px 16px 8px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   scroll-behavior: smooth;
 }
 
-/* keep messages centered and readable on wide screens */
 .msg-row {
   display: flex;
   gap: 10px;
-  max-width: 820px;
+  max-width: 760px;
   width: 100%;
   margin: 0 auto;
   align-items: flex-end;
 }
 .msg-row.user { justify-content: flex-end; }
 
-/* coach avatar: gold π in a circle */
+/* coach avatar: coral π in a soft circle */
 .avatar {
   flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #2a2c33, #17181c);
-  border: 1.5px solid var(--gold);
-  color: var(--gold);
+  background: var(--accent-soft);
+  color: var(--accent);
   display: grid;
   place-items: center;
   font-weight: 800;
-  font-size: 17px;
+  font-size: 18px;
+  box-shadow: var(--shadow-sm);
 }
 
 .bubble {
@@ -136,46 +197,40 @@ body {
   max-width: 78%;
   white-space: pre-wrap;
   word-wrap: break-word;
+  box-shadow: var(--shadow-sm);
 }
-
 .bubble.coach {
-  background: var(--surface-2);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-bottom-left-radius: 4px;
+  border-bottom-left-radius: 5px;
 }
-
 .bubble.user {
-  background: var(--user-bg);
-  border-bottom-right-radius: 4px;
+  background: var(--user-bubble);
+  color: var(--text);
+  border-bottom-right-radius: 5px;
 }
-
 .bubble .follow-up {
   display: block;
   margin-top: 8px;
-  color: var(--gold-soft);
+  color: var(--accent);
   font-size: 14px;
+  font-weight: 500;
 }
 
 /* streaming caret */
 .caret {
   display: inline-block;
   width: 7px;
-  color: var(--gold);
+  color: var(--accent);
   animation: blink 1s steps(2) infinite;
 }
 @keyframes blink { 50% { opacity: 0; } }
 
 /* ---------------- "Coach is thinking" ---------------- */
-.typing {
-  display: inline-flex;
-  gap: 4px;
-  padding: 14px 16px;
-  align-items: center;
-}
+.typing { display: inline-flex; gap: 4px; padding: 14px 16px; align-items: center; }
 .typing span {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--text-dim);
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--primary-deep);
   animation: bounce 1.2s infinite ease-in-out;
 }
 .typing span:nth-child(2) { animation-delay: 0.15s; }
@@ -185,36 +240,20 @@ body {
   30% { transform: translateY(-5px); opacity: 1; }
 }
 
-/* ---------------- Guardrail card ---------------- */
+/* ---------------- Guardrail card (friendly-protective) ---------------- */
 .guardrail {
-  background: linear-gradient(180deg, rgba(201,162,39,0.10), rgba(201,162,39,0.03));
-  border: 1.5px solid var(--gold);
+  background: var(--surface);
+  border: 2px solid var(--accent);
   border-radius: var(--radius);
   padding: 15px 16px;
   max-width: 78%;
+  box-shadow: var(--shadow);
 }
-.guardrail .gr-head {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-bottom: 8px;
-}
-.guardrail .shield {
-  font-size: 18px;
-  color: var(--gold);
-}
-.guardrail .gr-label {
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--gold);
-  letter-spacing: 0.2px;
-}
+.guardrail .gr-head { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+.guardrail .shield { font-size: 20px; }
+.guardrail .gr-label { font-weight: 700; font-size: 14px; color: var(--accent); }
 .guardrail .gr-body { color: var(--text); font-size: 15px; }
-.guardrail .gr-reframe {
-  margin-top: 10px;
-  color: var(--gold-soft);
-  font-size: 14px;
-}
+.guardrail .gr-reframe { margin-top: 10px; color: var(--primary-deep); font-size: 14px; font-weight: 500; }
 
 /* ---------------- Suggestion chips ---------------- */
 .chips {
@@ -222,37 +261,38 @@ body {
   flex-wrap: wrap;
   gap: 8px;
   padding: 6px 16px 10px;
-  max-width: 820px;
+  max-width: 760px;
   width: 100%;
   margin: 0 auto;
 }
 .chip {
-  background: transparent;
+  background: var(--surface);
   color: var(--text);
-  border: 1px solid var(--gold);
+  border: 1.5px solid var(--primary-deep);
   border-radius: 999px;
-  padding: 7px 13px;
+  padding: 8px 14px;
   font-size: 13.5px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
   font-family: inherit;
+  box-shadow: var(--shadow-sm);
 }
-.chip:hover { background: var(--gold); color: #0f1012; }
-.chip.inline { margin-top: 10px; } /* chip rendered inside a bubble/card */
+.chip:hover { background: var(--primary); border-color: var(--primary); }
+.chip:active { transform: scale(0.97); }
+.chip.inline { margin-top: 12px; background: var(--accent); color: #fff; border-color: var(--accent); }
 
 /* ---------------- Composer ---------------- */
 .composer {
   display: flex;
   gap: 10px;
-  padding: 12px 16px 16px;
+  padding: 12px 16px 14px;
   border-top: 1px solid var(--border);
   background: var(--surface);
-  max-width: 100%;
 }
 .composer-input {
   flex: 1;
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   border-radius: 999px;
   padding: 12px 16px;
   color: var(--text);
@@ -260,11 +300,12 @@ body {
   font-family: inherit;
   outline: none;
 }
-.composer-input:focus { border-color: var(--gold); }
+.composer-input:focus { border-color: var(--primary-deep); }
+.composer-input::placeholder { color: var(--text-dim); }
 
 .send-btn {
-  background: var(--gold);
-  color: #0f1012;
+  background: var(--accent);
+  color: #fff;
   border: none;
   border-radius: 999px;
   padding: 0 22px;
@@ -272,60 +313,90 @@ body {
   font-size: 15px;
   cursor: pointer;
   font-family: inherit;
+  box-shadow: var(--shadow-sm);
 }
-.send-btn:hover { background: var(--gold-soft); }
+.send-btn:hover { background: var(--primary-deep); }
 .send-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ---------------- Placeholder panels (Simulate / My Coins) ---------------- */
+.panel.placeholder { align-items: center; justify-content: center; padding: 24px; }
+.placeholder-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 34px 26px;
+  text-align: center;
+  max-width: 380px;
+}
+.placeholder-emoji { font-size: 44px; margin-bottom: 8px; }
+.placeholder-card h2 { margin: 0 0 8px; font-size: 22px; color: var(--text); }
+.placeholder-card p { margin: 0 0 18px; color: var(--text-dim); font-size: 15px; }
+.soon-badge {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 13px;
+  border-radius: 999px;
+  padding: 6px 14px;
+}
 
 /* ---------------- Modal ---------------- */
 .modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  z-index: 50;
+  position: fixed; inset: 0;
+  background: rgba(58, 53, 64, 0.45);
+  display: grid; place-items: center;
+  padding: 20px; z-index: 50;
 }
 .modal-overlay[hidden] { display: none; }
 .modal {
   background: var(--surface);
-  border: 1px solid var(--gold);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  max-width: 520px;
-  width: 100%;
+  box-shadow: var(--shadow);
+  max-width: 520px; width: 100%;
   padding: 26px 26px 20px;
   position: relative;
-  max-height: 85vh;
-  overflow-y: auto;
+  max-height: 85vh; overflow-y: auto;
 }
-.modal h2 { margin: 0 0 14px; color: var(--gold); font-size: 20px; }
+.modal h2 { margin: 0 0 14px; color: var(--accent); font-size: 20px; }
 .modal p { margin: 0 0 12px; color: var(--text); font-size: 14.5px; }
 .modal ul { margin: 0 0 12px; padding-left: 20px; color: var(--text); font-size: 14.5px; }
 .modal li { margin-bottom: 6px; }
 .modal .principle {
-  border-left: 3px solid var(--gold);
+  border-left: 3px solid var(--accent);
   padding-left: 12px;
   color: var(--text-dim);
 }
 .modal-close {
-  position: absolute;
-  top: 12px; right: 14px;
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 26px;
-  line-height: 1;
-  cursor: pointer;
+  position: absolute; top: 12px; right: 14px;
+  background: none; border: none;
+  color: var(--text-dim); font-size: 26px; line-height: 1; cursor: pointer;
 }
 .modal-close:hover { color: var(--text); }
 
-/* ---------------- Scrollbar (subtle) ---------------- */
+/* ---------------- Scrollbar ---------------- */
 .chat::-webkit-scrollbar { width: 8px; }
-.chat::-webkit-scrollbar-thumb { background: #2b2d33; border-radius: 8px; }
+.chat::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
 
-/* ---------------- Responsive ---------------- */
+/* ---------------- Desktop: tabs move to the TOP ---------------- */
+@media (min-width: 720px) {
+  .tabs {
+    order: 1;                 /* under the header */
+    border-top: none;
+    border-bottom: 1px solid var(--border);
+    justify-content: center;
+    gap: 10px;
+    padding: 8px;
+  }
+  .tab { flex: 0 0 auto; flex-direction: row; min-width: 130px; padding: 8px 18px; }
+  .tab-icon { font-size: 17px; }
+  .tab-label { font-size: 14px; }
+}
+
+/* ---------------- Small phones ---------------- */
 @media (max-width: 560px) {
-  .demo-badge { font-size: 10px; padding: 3px 8px; }
-  .bubble, .guardrail { max-width: 88%; }
+  .bubble, .guardrail { max-width: 86%; }
   .tagline { display: none; }
 }
