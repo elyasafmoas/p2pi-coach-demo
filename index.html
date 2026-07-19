@@ -8,7 +8,7 @@
   <!-- ?v= is a cache-buster: bump it on every deploy so browsers never mix a
        new index.html with a stale cached script/style from a previous deploy
        (the root cause of the empty-asset-picker bug). -->
-  <link rel="stylesheet" href="style.css?v=stage31" />
+  <link rel="stylesheet" href="style.css?v=stage32" />
 </head>
 <body>
   <!-- ============ HEADER ============ -->
@@ -81,6 +81,12 @@
     <!-- ---- Tab 2: Simulate (historical S&P 500 time machine) ---- -->
     <section class="panel scrollable" id="panel-simulate" role="tabpanel" hidden>
       <div class="sim-inner">
+
+        <!-- Banner shown when a lesson pre-loads a preset (learn→do bridge) -->
+        <div class="preset-banner" id="preset-banner" hidden>
+          <span id="preset-banner-text"></span>
+          <button class="preset-banner-close" id="preset-banner-close" type="button" aria-label="Dismiss">&times;</button>
+        </div>
 
         <!-- Friendly controls -->
         <div class="sim-card">
@@ -227,16 +233,16 @@
 
   <!-- Asset modules self-register into window.P2PI_ASSETS (order = display order).
        ?v= cache-buster is bumped on every deploy — see the note in <head>. -->
-  <script src="data/sp500.js?v=stage31"></script>
-  <script src="data/nasdaq.js?v=stage31"></script>
-  <script src="data/dow.js?v=stage31"></script>
-  <script src="data/ta35.js?v=stage31"></script>
-  <script src="data/agg.js?v=stage31"></script>
-  <script src="data/courses.js?v=stage31"></script>
-  <script src="store.js?v=stage31"></script>
-  <script src="app.js?v=stage31"></script>
-  <script src="simulate.js?v=stage31"></script>
-  <script src="coins.js?v=stage31"></script>
-  <script src="learn.js?v=stage31"></script>
+  <script src="data/sp500.js?v=stage32"></script>
+  <script src="data/nasdaq.js?v=stage32"></script>
+  <script src="data/dow.js?v=stage32"></script>
+  <script src="data/ta35.js?v=stage32"></script>
+  <script src="data/agg.js?v=stage32"></script>
+  <script src="data/courses.js?v=stage32"></script>
+  <script src="store.js?v=stage32"></script>
+  <script src="app.js?v=stage32"></script>
+  <script src="simulate.js?v=stage32"></script>
+  <script src="coins.js?v=stage32"></script>
+  <script src="learn.js?v=stage32"></script>
 </body>
 </html>

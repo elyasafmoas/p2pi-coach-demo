@@ -488,8 +488,15 @@ function countUp(el, target) {
   adaptYearRange();
   refreshLabels();
 
+  // --- Preset banner (learn→do bridge) ---
+  const presetBanner = document.getElementById("preset-banner");
+  const presetBannerText = document.getElementById("preset-banner-text");
+  const presetBannerClose = document.getElementById("preset-banner-close");
+  if (presetBannerClose) presetBannerClose.addEventListener("click", () => (presetBanner.hidden = true));
+
   runBtn.addEventListener("click", () => {
     if (!selected.length) return; // nothing to simulate if data failed to load
+    if (presetBanner) presetBanner.hidden = true; // banner's job is done once they run
     const leverage = +lev.value;
     const allocations = selected.map((a, i) => ({ asset: a, weight: weights[i] / 100 }));
     const result = runPortfolioSimulation(+amt.value, +year.value, leverage, allocations);
@@ -500,6 +507,47 @@ function countUp(el, target) {
     const bonus = leverage > 1 ? P2Pi.awardOnce("leverage_tried", 5) : 0;
     showCoinToast(COINS_PER_RUN + bonus, bonus > 0);
   });
+
+  /* ------------------------------------------------------------
+     Learn→do bridge: a lesson can pre-load the simulator and jump here.
+     Exposed globally so learn.js can call it. It sets the controls but
+     does NOT run — the student presses the button themselves.
+     ------------------------------------------------------------ */
+  window.P2PI_loadSimulatorPreset = function (preset, sourceLabel) {
+    if (!ASSETS.length || !preset) return;
+    // Assets → selection (cap at 4).
+    const picks = (preset.assets || [])
+      .map((id) => ASSETS.find((a) => a.id === id))
+      .filter(Boolean);
+    if (picks.length) selected = picks.slice(0, 4);
+    // Allocation → weights (only if it matches the selection count).
+    if (preset.allocation && preset.allocation.length === selected.length) {
+      weights = preset.allocation.slice();
+    } else {
+      weights = equalWeightsFor(selected.length);
+    }
+    renderPicker();
+    renderAllocPanel();
+    // Amount + leverage (clamped to the sliders' ranges).
+    if (preset.amount != null) amt.value = Math.min(10000, Math.max(100, preset.amount));
+    if (preset.leverage != null) lev.value = Math.min(5, Math.max(1, preset.leverage));
+    // Year: clamp to the selection's allowed range AFTER adaptYearRange sets the min.
+    adaptYearRange();
+    if (preset.startYear != null) {
+      year.value = Math.max(+year.min, Math.min(+year.max, preset.startYear));
+    }
+    refreshLabels();
+
+    // Banner + switch to the Simulate tab, scrolled to the top.
+    if (presetBanner) {
+      presetBannerText.textContent = `Loaded from ${sourceLabel || "a lesson"} — press the button to run it 👇`;
+      presetBanner.hidden = false;
+    }
+    const simTab = document.querySelector('.tab[data-tab="simulate"]');
+    if (simTab) simTab.click();
+    const panel = document.getElementById("panel-simulate");
+    if (panel) panel.scrollTop = 0;
+  };
 
   function renderResults(r) {
     results.hidden = false;

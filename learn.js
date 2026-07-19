@@ -106,6 +106,22 @@
     show(courseView);
   }
 
+  // A lesson's optional "try it in the Simulator" call-to-action.
+  function tryItHTML(lesson, id) {
+    if (!lesson.tryIt) return "";
+    return `<button class="tryit-cta" id="${id}" type="button">
+        <span class="tryit-icon">🎮</span><span>${lesson.tryIt.label}</span></button>`;
+  }
+  function wireTryIt(lesson, id, courseTitle) {
+    const btn = lessonView.querySelector("#" + id);
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      if (typeof window.P2PI_loadSimulatorPreset === "function") {
+        window.P2PI_loadSimulatorPreset(lesson.tryIt.simulatorPreset, courseTitle);
+      }
+    });
+  }
+
   /* ---------------- Lesson: reading, then quiz ---------------- */
   function renderLesson(c, index) {
     const lesson = c.lessons[index];
@@ -115,11 +131,13 @@
         <h2 class="lesson-title">${lesson.title}</h2>
         ${lesson.content.map((p) => `<p>${p}</p>`).join("")}
         <button class="run-btn" id="start-quiz" type="button">Practice what you learned →</button>
+        ${tryItHTML(lesson, "tryit-read")}
       </div>
       <div class="lesson-quiz" id="lesson-quiz" hidden></div>`;
 
     lessonView.querySelector('[data-back="course"]').addEventListener("click", () => renderCourse(c));
     lessonView.querySelector("#start-quiz").addEventListener("click", () => startQuiz(c, index));
+    wireTryIt(lesson, "tryit-read", c.title);
     show(lessonView);
   }
 
@@ -212,8 +230,10 @@
           <div class="celebrate">🎉</div>
           <h2>Lesson complete!</h2>
           ${gained > 0 ? `<p class="coins-won">+2 coins</p>` : `<p class="cc-done-name">Nicely reviewed.</p>`}
-          <button class="run-btn" id="done-back" type="button">Back to ${c.title}</button>
+          ${tryItHTML(lesson, "tryit-done")}
+          <button class="run-btn ${lesson.tryIt ? "ghost" : ""}" id="done-back" type="button">Back to ${c.title}</button>
         </div>`;
+      wireTryIt(lesson, "tryit-done", c.title);
       quizBox.querySelector("#done-back").addEventListener("click", () => renderCourse(c));
     }
   }

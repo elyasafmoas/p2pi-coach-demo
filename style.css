@@ -771,7 +771,67 @@ body {
   margin: 8px 0 18px;
   text-align: left;
 }
-.celebrate-wrap .run-btn { max-width: 280px; margin: 0 auto; }
+.celebrate-wrap .run-btn { max-width: 300px; margin: 6px auto 0; }
+
+/* Learn→do bridge: "try it in the Simulator" CTA */
+.tryit-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 14px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-dark));
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 18px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: var(--shadow);
+  transition: transform 0.1s, filter 0.15s;
+}
+.tryit-cta:hover { filter: brightness(1.05); }
+.tryit-cta:active { transform: scale(0.98); }
+.tryit-icon { font-size: 18px; }
+.celebrate-wrap .tryit-cta { max-width: 320px; margin: 14px auto 0; }
+
+/* Secondary/ghost button (e.g. "Back to course" when a tryIt is primary) */
+.run-btn.ghost {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-border);
+  box-shadow: none;
+}
+.run-btn.ghost:hover { background: var(--color-primary-soft); }
+
+/* Preset banner in the Simulate tab */
+.preset-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--color-primary-soft);
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.preset-banner[hidden] { display: none; }
+.preset-banner span { flex: 1; }
+.preset-banner-close {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
 
 /* Chart legend (asset colour + name) */
 .chart-legend {

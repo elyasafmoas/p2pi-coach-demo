@@ -141,12 +141,269 @@
     ],
   };
 
-  window.P2PI_COURSES = window.P2PI_COURSES || [];
-  window.P2PI_COURSES.push(finance101);
+  /* ===================== Investments 101 ===================== */
+  const investments101 = {
+    id: "investments101",
+    title: "Investments 101",
+    tagline: "Stocks, indexes, and how to spread risk.",
+    emoji: "📊",
+    lessons: [
+      {
+        id: "l1",
+        title: "What is a stock?",
+        content: [
+          "A stock is a tiny slice of ownership in a company. Buy one share and you literally own a small piece of that business — if it does well, your slice can become more valuable; if it struggles, your slice can shrink.",
+          "Companies sell shares to raise money to grow, and in return shareholders get to benefit from that growth. Some companies even share a slice of their profits with shareholders — that's called a dividend.",
+          "So you're not buying a lottery ticket — you're becoming a part-owner of a real business. That's why understanding what a company actually does matters far more than chasing a hot tip.",
+        ],
+        quiz: [
+          {
+            question: "A stock is…",
+            options: ["A small piece of ownership in a company", "A loan to the government", "A type of savings account", "A lottery ticket"],
+            correctIndex: 0,
+            feedbackCorrect: "Exactly — one share is a tiny slice of a real business.",
+            feedbackWrong: "A stock is a small piece of ownership in a company.",
+          },
+          {
+            question: "If a company you own shares in grows over time, your share…",
+            options: ["Can become more valuable", "Always stays exactly the same", "Turns into cash automatically", "Disappears"],
+            correctIndex: 0,
+            feedbackCorrect: "Right — you benefit from the company's growth.",
+            feedbackWrong: "If the company grows, your share can become more valuable.",
+          },
+          {
+            question: "A \"dividend\" is…",
+            options: ["A slice of profits some companies pay shareholders", "A penalty for selling", "A government tax", "A type of stock"],
+            correctIndex: 0,
+            feedbackCorrect: "Yep — some companies share profits as dividends.",
+            feedbackWrong: "A dividend is a share of profits that some companies pay to their shareholders.",
+          },
+        ],
+      },
+      {
+        id: "l2",
+        title: "What is an index?",
+        content: [
+          "Instead of picking one company, an index bundles many together and tracks them as a group — one simple number that answers \"how are all these companies doing overall?\"",
+          "Famous examples: the S&P 500 (500 of the biggest U.S. companies), the NASDAQ (tech-heavy, with bigger swings), the Dow Jones (30 classic U.S. giants), and Israel's TA-35 (the 35 largest companies in Tel Aviv). Buy into an index and you're spread across all its companies at once.",
+          "That built-in spreading is why so many people use a broad index as a starting point: instead of betting on a single winner, you get a slice of the whole group.",
+        ],
+        quiz: [
+          {
+            question: "An index is…",
+            options: ["A group of many companies tracked together", "A single company's stock", "A type of bank account", "A government loan"],
+            correctIndex: 0,
+            feedbackCorrect: "Exactly — one number for a whole group of companies.",
+            feedbackWrong: "An index tracks many companies together as a group.",
+          },
+          {
+            question: "Which of these is the tech-heavy index known for bigger swings?",
+            options: ["The NASDAQ", "The Dow Jones", "The TA-35", "A savings bond"],
+            correctIndex: 0,
+            feedbackCorrect: "Right — the NASDAQ leans tech, so it's bumpier.",
+            feedbackWrong: "The NASDAQ is the tech-heavy index known for bigger swings.",
+          },
+          {
+            question: "Israel's leading index of its 35 largest companies is…",
+            options: ["The TA-35", "The S&P 500", "The Dow Jones", "The NASDAQ"],
+            correctIndex: 0,
+            feedbackCorrect: "Yep — the TA-35 tracks Tel Aviv's biggest names.",
+            feedbackWrong: "That's the TA-35 — Israel's 35 largest companies.",
+          },
+        ],
+        tryIt: {
+          label: "See the S&P 500's real journey →",
+          simulatorPreset: { assets: ["sp500"], amount: 1000, startYear: 2015, leverage: 1 },
+        },
+      },
+      {
+        id: "l3",
+        title: "Diversification: don't put it all in one basket",
+        content: [
+          "There's an old saying: don't put all your eggs in one basket. In investing that's called diversification — spreading your money across different investments so one bad apple can't spoil everything.",
+          "When you spread out, a rough year for one holding can be softened by a steadier or better year from another. It doesn't erase risk, and it won't save you if everything falls at once — but historically, a mix tends to have gentler ups and downs than any single bet.",
+          "Our Simulator shows this beautifully: split your money across a few indexes and watch the \"worst year\" get milder. That softening is diversification doing its quiet job.",
+        ],
+        quiz: [
+          {
+            question: "Diversification means…",
+            options: ["Spreading money across different investments", "Putting everything into one stock", "Only ever holding cash", "Borrowing to invest"],
+            correctIndex: 0,
+            feedbackCorrect: "Exactly — spread out, don't concentrate.",
+            feedbackWrong: "Diversification means spreading your money across different investments.",
+          },
+          {
+            question: "One honest limit of diversification is…",
+            options: ["It won't save you if everything falls at once", "It guarantees a profit", "It removes all risk forever", "It only works for rich people"],
+            correctIndex: 0,
+            feedbackCorrect: "Right — it softens bumps, but it isn't magic.",
+            feedbackWrong: "Diversification softens bumps, but it won't save you if everything falls together.",
+          },
+          {
+            question: "In the Simulator, splitting your money tends to make the worst year…",
+            options: ["Milder", "Much worse", "Disappear entirely", "Exactly the same, always"],
+            correctIndex: 0,
+            feedbackCorrect: "Yep — that softening is the diversification callout at work.",
+            feedbackWrong: "Splitting tends to make the worst year milder — that's what the diversification callout shows.",
+          },
+        ],
+        tryIt: {
+          label: "See how a 50/50 split handled 2008 →",
+          simulatorPreset: { assets: ["sp500", "agg"], allocation: [50, 50], amount: 1000, startYear: 2007, leverage: 1 },
+        },
+      },
+      {
+        id: "l4",
+        title: "Fees: the quiet leak",
+        content: [
+          "Investing usually comes with small fees, and they're worth understanding because they're so easy to miss. A common one is a management fee — a yearly percentage a fund charges just to run itself.",
+          "The numbers sound tiny, but they add up. Imagine two funds: one charges 0.1% a year, the other 1%. On ₪10,000 that's ₪10 versus ₪100 a year — and over many years, that gap quietly compounds into a real difference in what you keep.",
+          "Fees aren't evil — they pay for a service. But a great habit is simply to know what you're paying. Low-cost broad index funds are popular partly because their fees are so small.",
+        ],
+        quiz: [
+          {
+            question: "A management fee is…",
+            options: ["A yearly percentage a fund charges to run itself", "A one-time government tax", "A penalty for winning", "A type of dividend"],
+            correctIndex: 0,
+            feedbackCorrect: "Right — a small yearly cost to run the fund.",
+            feedbackWrong: "A management fee is a yearly percentage a fund charges to run itself.",
+          },
+          {
+            question: "On ₪10,000, a 1% yearly fee costs about…",
+            options: ["₪100 a year", "₪1 a year", "₪1,000 a year", "Nothing at all"],
+            correctIndex: 0,
+            feedbackCorrect: "Exactly — 1% of ₪10,000 is ₪100.",
+            feedbackWrong: "1% of ₪10,000 is ₪100 a year — small-sounding, but it adds up.",
+          },
+          {
+            question: "Why do fees matter over the long run?",
+            options: ["Small percentages compound into real money", "They are always enormous", "They make prices rise", "They don't matter at all"],
+            correctIndex: 0,
+            feedbackCorrect: "Yep — tiny leaks add up over many years.",
+            feedbackWrong: "Even small fees compound into a real difference over many years.",
+          },
+        ],
+      },
+    ],
+  };
 
-  // Teaser cards that signal more is coming (not yet built).
-  window.P2PI_COURSES_SOON = [
-    { emoji: "📊", title: "Investing 201", tagline: "Indexes, diversification, and leverage — deeper." },
-    { emoji: "🧠", title: "Money Mindset", tagline: "Habits, goals, and beating impulse spending." },
-  ];
+  /* ===================== Leverage 101 ===================== */
+  const leverage101 = {
+    id: "leverage101",
+    title: "Leverage 101",
+    tagline: "Borrowed money, bigger swings — handle with care.",
+    emoji: "⚡",
+    lessons: [
+      {
+        id: "l1",
+        title: "Borrowing to invest: how leverage works",
+        content: [
+          "Leverage means investing with borrowed money, so your position is bigger than your own cash. The catch: it multiplies movement in BOTH directions — equally.",
+          "Quick example: put in ₪1,000 at 4x, and you're controlling ₪4,000. If the market rises 10%, you don't gain 10% — you gain about 40% (₪400). But if it falls 10%, you lose about 40% (₪400) of your own money, not 10%.",
+          "Same tool, opposite outcomes. Leverage doesn't create free upside; it stretches the risk right alongside the reward. That's the one idea to hold onto.",
+        ],
+        quiz: [
+          {
+            question: "Leverage means…",
+            options: ["Investing with borrowed money to control a bigger position", "Only ever using your own cash", "A type of savings account", "A way to avoid all risk"],
+            correctIndex: 0,
+            feedbackCorrect: "Exactly — borrowed money, bigger position.",
+            feedbackWrong: "Leverage means using borrowed money to control a bigger position.",
+          },
+          {
+            question: "With ₪1,000 at 4x, a 10% market rise gives you about…",
+            options: ["+40% (₪400)", "+10% (₪100)", "+4% (₪40)", "Nothing"],
+            correctIndex: 0,
+            feedbackCorrect: "Right — 4x turns a 10% rise into about +40%.",
+            feedbackWrong: "At 4x, a 10% rise becomes about +40% (₪400) — and a 10% fall becomes −40%.",
+          },
+          {
+            question: "The key thing leverage multiplies is…",
+            options: ["Both gains AND losses", "Only your gains", "Only your losses", "Neither"],
+            correctIndex: 0,
+            feedbackCorrect: "Yep — both directions, equally.",
+            feedbackWrong: "Leverage multiplies both gains AND losses, equally.",
+          },
+        ],
+        tryIt: {
+          label: "Watch 4x leverage in action →",
+          simulatorPreset: { assets: ["sp500"], amount: 1000, startYear: 2015, leverage: 4 },
+        },
+      },
+      {
+        id: "l2",
+        title: "The margin call",
+        content: [
+          "When you invest with borrowed money and the market drops, your losses grow fast — because they're multiplied. If your own money (your cushion) shrinks too far, the lender steps in to protect their loan.",
+          "That moment is called a margin call: the lender automatically sells your position, locking in the loss before it can fall further. It's not a punishment — it's how the lender makes sure they get their money back.",
+          "The hard part is the timing: a margin call can wipe you out right before the market recovers, so you miss the rebound entirely. It's the clearest reason leverage is risky — and why our Simulator lets you trigger one safely to watch it happen.",
+        ],
+        quiz: [
+          {
+            question: "A margin call happens when…",
+            options: ["Your cushion shrinks too far and the lender closes your position", "You make too much profit", "You choose to sell voluntarily", "The market goes up"],
+            correctIndex: 0,
+            feedbackCorrect: "Right — the lender steps in to protect their loan.",
+            feedbackWrong: "A margin call is when your cushion gets too thin and the lender closes your position.",
+          },
+          {
+            question: "Why does a margin call exist?",
+            options: ["So the lender can recover the money they lent", "To reward risky investors", "To push prices higher", "As a government rule for savers"],
+            correctIndex: 0,
+            feedbackCorrect: "Exactly — it protects the lender's loan.",
+            feedbackWrong: "It exists so the lender can recover the money they lent you.",
+          },
+          {
+            question: "The painful part of a margin call is…",
+            options: ["It can lock in losses right before a recovery", "It always makes you money", "It removes all risk", "It has no downside"],
+            correctIndex: 0,
+            feedbackCorrect: "Yep — you can miss the rebound entirely.",
+            feedbackWrong: "It can lock in your loss right before the market recovers — so you miss the bounce-back.",
+          },
+        ],
+        tryIt: {
+          label: "Trigger a margin call safely →",
+          simulatorPreset: { assets: ["nasdaq"], amount: 1000, startYear: 2007, leverage: 5 },
+        },
+      },
+      {
+        id: "l3",
+        title: "Who should even think about leverage?",
+        content: [
+          "Here's the honest answer: leverage isn't a beginner tool, and there's no universal \"right\" amount — it depends entirely on the person. So instead of telling you what to do, let's talk about the questions people weigh.",
+          "Two big ones: risk tolerance (could you stay calm, and stay invested, if a leveraged position dropped 40% in a month?) and time horizon (money you might need soon has no room to recover from a margin call). The more you'd panic, or the sooner you need the money, the less room there is for leverage.",
+          "This is education, not advice — we can explain how leverage works and what to consider, but the choice is always yours to make, ideally only once you deeply understand the risks. When in doubt, the calmest option is simply not using it.",
+        ],
+        quiz: [
+          {
+            question: "Is there a single \"right\" amount of leverage for everyone?",
+            options: ["No — it depends entirely on the person", "Yes, always 4x", "Yes, always 5x", "Yes, everyone should max it out"],
+            correctIndex: 0,
+            feedbackCorrect: "Right — it's personal, never one-size-fits-all.",
+            feedbackWrong: "There's no universal right amount — it depends entirely on the person.",
+          },
+          {
+            question: "Money you might need soon is…",
+            options: ["A poor match for leverage — no room to recover", "Perfect for maximum leverage", "Safest when leveraged", "Completely unaffected by risk"],
+            correctIndex: 0,
+            feedbackCorrect: "Exactly — short horizons and leverage clash.",
+            feedbackWrong: "Money you might need soon has no room to recover from a margin call, so it's a poor match for leverage.",
+          },
+          {
+            question: "What's this lesson's honest stance?",
+            options: ["Education on the trade-offs — the choice is yours", "A recommendation to use 5x", "A promise of guaranteed profits", "Advice to avoid all investing"],
+            correctIndex: 0,
+            feedbackCorrect: "Yep — we teach; you decide.",
+            feedbackWrong: "It's education on the trade-offs — we explain, but the choice is always yours.",
+          },
+        ],
+      },
+    ],
+  };
+
+  window.P2PI_COURSES = window.P2PI_COURSES || [];
+  window.P2PI_COURSES.push(finance101, investments101, leverage101);
+
+  // All three courses are real now — no "coming soon" placeholders.
+  window.P2PI_COURSES_SOON = [];
 })();
