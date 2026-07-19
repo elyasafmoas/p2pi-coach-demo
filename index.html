@@ -8,7 +8,7 @@
   <!-- ?v= is a cache-buster: bump it on every deploy so browsers never mix a
        new index.html with a stale cached script/style from a previous deploy
        (the root cause of the empty-asset-picker bug). -->
-  <link rel="stylesheet" href="style.css?v=stage44" />
+  <link rel="stylesheet" href="style.css?v=stage45" />
 </head>
 <body>
   <!-- ============ HEADER ============ -->
@@ -36,12 +36,15 @@
   </header>
 
   <!-- ============ TAB NAVIGATION (top on desktop, bottom on mobile) ============ -->
-  <nav class="tabs two-tabs" id="tabs" role="tablist" aria-label="Main sections">
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Main sections">
     <button class="tab active" data-tab="learn" role="tab" aria-selected="true">
       <span class="tab-icon">📚</span><span class="tab-label">Learn</span>
     </button>
     <button class="tab" data-tab="simulate" role="tab" aria-selected="false">
       <span class="tab-icon">📈</span><span class="tab-label">Simulate</span>
+    </button>
+    <button class="tab" data-tab="portfolio" role="tab" aria-selected="false">
+      <span class="tab-icon">💼</span><span class="tab-label">My Portfolio</span>
     </button>
   </nav>
 
@@ -166,6 +169,11 @@
       <div class="coach-backdrop" id="coach-backdrop" hidden></div>
     </section>
 
+    <!-- ---- Tab 3: My Portfolio (static "as of today" demo account) ---- -->
+    <section class="panel scrollable" id="panel-portfolio" role="tabpanel" hidden>
+      <div class="pf-inner" id="pf-inner"><!-- rendered by portfolio.js --></div>
+    </section>
+
   </div>
 
   <!-- ============ MY COINS overlay (opened from the header coin counter) ============ -->
@@ -266,17 +274,19 @@
 
   <!-- Asset modules self-register into window.P2PI_ASSETS (order = display order).
        ?v= cache-buster is bumped on every deploy — see the note in <head>. -->
-  <script src="data/sp500.js?v=stage44"></script>
-  <script src="data/nasdaq.js?v=stage44"></script>
-  <script src="data/dow.js?v=stage44"></script>
-  <script src="data/ta35.js?v=stage44"></script>
-  <script src="data/agg.js?v=stage44"></script>
-  <script src="data/courses.js?v=stage44"></script>
-  <script src="store.js?v=stage44"></script>
-  <script src="app.js?v=stage44"></script>
-  <script src="simulate.js?v=stage44"></script>
-  <script src="coins.js?v=stage44"></script>
-  <script src="learn.js?v=stage44"></script>
-  <script src="onboarding.js?v=stage44"></script>
+  <script src="data/sp500.js?v=stage45"></script>
+  <script src="data/nasdaq.js?v=stage45"></script>
+  <script src="data/dow.js?v=stage45"></script>
+  <script src="data/ta35.js?v=stage45"></script>
+  <script src="data/agg.js?v=stage45"></script>
+  <script src="data/courses.js?v=stage45"></script>
+  <script src="data/portfolio2026.js?v=stage45"></script>
+  <script src="store.js?v=stage45"></script>
+  <script src="app.js?v=stage45"></script>
+  <script src="simulate.js?v=stage45"></script>
+  <script src="coins.js?v=stage45"></script>
+  <script src="learn.js?v=stage45"></script>
+  <script src="portfolio.js?v=stage45"></script>
+  <script src="onboarding.js?v=stage45"></script>
 </body>
 </html>

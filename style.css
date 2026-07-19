@@ -566,6 +566,63 @@ body {
   100% { transform: scale(1); }
 }
 
+/* ---------------- My Portfolio tab ---------------- */
+.pf-inner { max-width: 640px; margin: 0 auto; padding: 18px 16px 28px; }
+.pf-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.pf-title { margin: 0; font-size: 26px; }
+.pf-asof { font-size: 13px; color: var(--color-text-muted); font-weight: 600; white-space: nowrap; }
+
+.pf-balance-card {
+  background: var(--color-primary-soft);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.pf-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+.pf-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
+  box-shadow: 0 0 0 0 rgba(0, 184, 124, 0.5);
+  animation: pfPulse 1.6s ease-in-out infinite;
+}
+@keyframes pfPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 184, 124, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(0, 184, 124, 0); }
+}
+.pf-balance-label { font-size: 13px; color: var(--color-text-muted); font-weight: 600; }
+.pf-balance { font-size: 46px; font-weight: 800; color: var(--color-text); letter-spacing: -1px; line-height: 1.1; }
+.pf-pl { font-size: 16px; font-weight: 800; margin-top: 4px; }
+.pf-pl span { margin: 0 3px; }
+.pf-invested { margin-top: 10px; font-size: 13px; color: var(--color-text-muted); }
+
+.pf-period { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; }
+.pf-chip {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: inherit;
+}
+.pf-chip:hover { border-color: var(--color-primary); }
+.pf-chip.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+.pf-chart-wrap { margin-bottom: 8px; }
+
 /* ---------------- My Coins overlay ---------------- */
 .coins-overlay {
   position: fixed;
