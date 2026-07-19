@@ -1,5 +1,5 @@
 /* ============================================================
-   Tab 3 — My Coins.
+   My Coins — the coins overlay (opened from the header coin counter).
    Shows the coin balance from the shared store, and plays a playful
    coin animation whenever the balance goes up. The earning rules and
    the "coming soon" teaser are static markup in index.html.
@@ -7,7 +7,7 @@
 (function initCoinsTab() {
   const balanceEl = document.getElementById("coins-balance");
   const hero = document.getElementById("coins-hero");
-  if (!balanceEl) return; // My Coins panel not on the page
+  if (!balanceEl) return; // My Coins overlay not on the page
 
   P2Pi.onChange((total, delta) => {
     balanceEl.textContent = total;

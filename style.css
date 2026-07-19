@@ -91,17 +91,25 @@ body {
   flex-wrap: wrap;
 }
 
-.brand { display: flex; align-items: center; gap: 12px; }
+.brand { display: flex; align-items: center; }
 
+/* Logo + tagline as one lockup (brand mark, not a floating subtitle) */
+.logo-lockup { display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
 .logo {
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.5px;
   color: var(--color-text);
+  line-height: 1;
 }
 .logo .pi { color: var(--color-primary); }
 
-.tagline { color: var(--color-text-muted); font-size: 13px; }
+.tagline {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  margin-top: 3px;
+}
 
 .header-right { display: flex; align-items: center; gap: 12px; }
 
@@ -532,15 +540,24 @@ body {
 .num-negative { color: var(--color-warning); font-weight: 700; }   /* losses — red down */
 
 /* ---------------- Coin counter + toast ---------------- */
+/* Tappable coin counter (opens the My Coins overlay) */
 .coin-counter {
+  font-family: inherit;
   font-size: 14px;
   font-weight: 700;
   color: var(--color-primary);
   background: var(--color-primary-soft);
+  border: 1px solid var(--color-border);
   border-radius: 999px;
-  padding: 4px 11px;
-  display: inline-block;
+  padding: 5px 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
 }
+.coin-counter:hover { background: #ffd9ec; border-color: var(--color-primary); }
+.coin-counter:active { transform: scale(0.96); }
 /* Little pop whenever coins are added, anywhere in the app. */
 .bump { animation: bump 0.4s ease; }
 @keyframes bump {
@@ -548,6 +565,62 @@ body {
   35% { transform: scale(1.35); }
   100% { transform: scale(1); }
 }
+
+/* ---------------- My Coins overlay ---------------- */
+.coins-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(58, 53, 64, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.coins-overlay[hidden] { display: none; }
+.coins-sheet {
+  position: relative;
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 420px;
+  max-height: 86vh;
+  overflow-y: auto;
+}
+.coins-sheet-head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 800;
+  font-size: 16px;
+  z-index: 1;
+}
+.coins-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.coins-close:hover { color: var(--color-text); }
+/* Mobile: bottom sheet, same pattern as the Coach sheet */
+@media (max-width: 560px) {
+  .coins-overlay { align-items: end; padding: 0; }
+  .coins-sheet {
+    max-width: 100%;
+    max-height: 84vh;
+    border-radius: var(--radius) var(--radius) 0 0;
+    animation: coinsSheetUp 0.25s ease;
+  }
+}
+@keyframes coinsSheetUp { from { transform: translateY(100%); } to { transform: none; } }
+
 .toast {
   position: fixed;
   left: 50%;
@@ -1418,5 +1491,12 @@ input[type="range"]::-moz-range-thumb {
 /* ---------------- Small phones ---------------- */
 @media (max-width: 560px) {
   .bubble, .guardrail { max-width: 86%; }
-  .tagline { display: none; }
+  /* Brand mark degrades gracefully: logo alone in the header on narrow screens
+     (the tagline still shows where the brand appears large, e.g. the modal). */
+  .app-header .tagline { display: none; }
 }
+
+/* Brand lockup shown large in the How-this-works modal */
+.modal-lockup { margin: 0 0 10px; }
+.modal-lockup .logo { font-size: 30px; }
+.modal-lockup .tagline { font-size: 12px; }

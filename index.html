@@ -8,17 +8,20 @@
   <!-- ?v= is a cache-buster: bump it on every deploy so browsers never mix a
        new index.html with a stale cached script/style from a previous deploy
        (the root cause of the empty-asset-picker bug). -->
-  <link rel="stylesheet" href="style.css?v=stage43" />
+  <link rel="stylesheet" href="style.css?v=stage44" />
 </head>
 <body>
   <!-- ============ HEADER ============ -->
   <header class="app-header">
     <div class="brand">
-      <div class="logo">P2<span class="pi">π</span></div>
-      <span class="tagline">Invest, share, grow.</span>
+      <div class="logo-lockup">
+        <div class="logo">P2<span class="pi">π</span></div>
+        <span class="tagline">Invest, share, grow.</span>
+      </div>
     </div>
     <div class="header-right">
-      <span class="coin-counter" id="coin-counter" title="Your P2π coins">🪙 <b id="coin-count">0</b></span>
+      <button class="coin-counter" id="coin-counter" type="button" title="Your P2π coins — tap to open"
+        aria-haspopup="dialog">🪙 <b id="coin-count">0</b></button>
       <span class="demo-badge">DEMO</span>
       <div class="settings-wrap">
         <button id="settings-btn" class="settings-btn" type="button" aria-label="Settings"
@@ -33,15 +36,12 @@
   </header>
 
   <!-- ============ TAB NAVIGATION (top on desktop, bottom on mobile) ============ -->
-  <nav class="tabs" id="tabs" role="tablist" aria-label="Main sections">
+  <nav class="tabs two-tabs" id="tabs" role="tablist" aria-label="Main sections">
     <button class="tab active" data-tab="learn" role="tab" aria-selected="true">
       <span class="tab-icon">📚</span><span class="tab-label">Learn</span>
     </button>
     <button class="tab" data-tab="simulate" role="tab" aria-selected="false">
       <span class="tab-icon">📈</span><span class="tab-label">Simulate</span>
-    </button>
-    <button class="tab" data-tab="coins" role="tab" aria-selected="false">
-      <span class="tab-icon">🪙</span><span class="tab-label">My Coins</span>
     </button>
   </nav>
 
@@ -166,8 +166,15 @@
       <div class="coach-backdrop" id="coach-backdrop" hidden></div>
     </section>
 
-    <!-- ---- Tab 3: My Coins ---- -->
-    <section class="panel scrollable" id="panel-coins" role="tabpanel" hidden>
+  </div>
+
+  <!-- ============ MY COINS overlay (opened from the header coin counter) ============ -->
+  <div class="coins-overlay" id="coins-overlay" hidden>
+    <div class="coins-sheet" role="dialog" aria-modal="true" aria-label="My Coins">
+      <div class="coins-sheet-head">
+        <span>My Coins</span>
+        <button class="coins-close" id="coins-close" type="button" aria-label="Close">&times;</button>
+      </div>
       <div class="coins-inner">
 
         <!-- Balance -->
@@ -199,22 +206,26 @@
         </div>
 
       </div>
-    </section>
-
+    </div>
   </div>
 
   <!-- ============ "HOW THIS WORKS" MODAL ============ -->
   <div class="modal-overlay" id="modal-overlay" hidden>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+      <div class="logo-lockup modal-lockup">
+        <div class="logo">P2<span class="pi">π</span></div>
+        <span class="tagline">Invest, share, grow.</span>
+      </div>
       <h2 id="modal-title">How this works</h2>
       <p>This is a <strong>friendly classroom demo</strong> — no live AI, no backend, no
-        accounts. It has three parts:</p>
+        accounts. There are two tabs plus your coins:</p>
       <ul>
         <li><strong>📚 Learn</strong> — short courses with quizzes that teach the basics.</li>
         <li><strong>📈 Simulate</strong> — <em>do</em> it: replay real market history with
           pretend shekels, then <em>ask</em> the built-in Coach about your own result.</li>
-        <li><strong>🪙 My Coins</strong> — rewards you earn for learning and exploring.</li>
+        <li><strong>🪙 My Coins</strong> — tap the coin counter up top to see the rewards you've
+          earned for learning and exploring.</li>
       </ul>
       <p>The Coach's replies are <strong>scripted</strong>, and the "thinking…" pause and
         word-by-word reveal are simulated to make it <em>feel</em> like a real AI coach. In the
@@ -255,17 +266,17 @@
 
   <!-- Asset modules self-register into window.P2PI_ASSETS (order = display order).
        ?v= cache-buster is bumped on every deploy — see the note in <head>. -->
-  <script src="data/sp500.js?v=stage43"></script>
-  <script src="data/nasdaq.js?v=stage43"></script>
-  <script src="data/dow.js?v=stage43"></script>
-  <script src="data/ta35.js?v=stage43"></script>
-  <script src="data/agg.js?v=stage43"></script>
-  <script src="data/courses.js?v=stage43"></script>
-  <script src="store.js?v=stage43"></script>
-  <script src="app.js?v=stage43"></script>
-  <script src="simulate.js?v=stage43"></script>
-  <script src="coins.js?v=stage43"></script>
-  <script src="learn.js?v=stage43"></script>
-  <script src="onboarding.js?v=stage43"></script>
+  <script src="data/sp500.js?v=stage44"></script>
+  <script src="data/nasdaq.js?v=stage44"></script>
+  <script src="data/dow.js?v=stage44"></script>
+  <script src="data/ta35.js?v=stage44"></script>
+  <script src="data/agg.js?v=stage44"></script>
+  <script src="data/courses.js?v=stage44"></script>
+  <script src="store.js?v=stage44"></script>
+  <script src="app.js?v=stage44"></script>
+  <script src="simulate.js?v=stage44"></script>
+  <script src="coins.js?v=stage44"></script>
+  <script src="learn.js?v=stage44"></script>
+  <script src="onboarding.js?v=stage44"></script>
 </body>
 </html>

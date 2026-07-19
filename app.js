@@ -766,6 +766,17 @@ if (confirmYes) {
   });
 }
 
+// Coin counter opens the "My Coins" overlay (dropdown/modal on desktop, sheet on mobile).
+const coinCounterBtn = document.getElementById("coin-counter");
+const coinsOverlay = document.getElementById("coins-overlay");
+function closeCoins() { if (coinsOverlay) coinsOverlay.hidden = true; }
+if (coinCounterBtn && coinsOverlay) {
+  coinCounterBtn.addEventListener("click", () => (coinsOverlay.hidden = false));
+  const coinsCloseBtn = document.getElementById("coins-close");
+  if (coinsCloseBtn) coinsCloseBtn.addEventListener("click", closeCoins);
+  coinsOverlay.addEventListener("click", (e) => { if (e.target === coinsOverlay) closeCoins(); });
+}
+
 // Escape closes any open overlay/menu (Escape on the confirm = Cancel, the safe action).
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
@@ -773,4 +784,5 @@ document.addEventListener("keydown", (e) => {
   closeConfirm();
   closeSettings();
   closeCoachSheet();
+  closeCoins();
 });

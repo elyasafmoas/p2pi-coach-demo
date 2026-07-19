@@ -30,12 +30,13 @@ right there. It's skippable ("Skip for now") and re-runnable anytime from **Sett
 "Redo my welcome"** (without wiping progress). The persona is remembered so the recommended
 badge persists.
 
-## The three tabs
+## The layout
 
-The demo is a mobile-first, single-page app with a tab bar (bottom on phones, top on
-desktop):
+The demo is a mobile-first, single-page app with a two-tab bar (bottom on phones, top on
+desktop) — **Learn** and **Simulate** — plus a tappable **coin counter** in the header that
+opens the **My Coins** rewards overlay.
 
-The architecture: **Learn = learn it, Simulate = do it + ask about it, My Coins = rewards.**
+The architecture: **Learn = learn it, Simulate = do it + ask about it, coins = rewards.**
 
 ### 📚 Learn — the course marketplace
 A grid of short, playful **courses** — Finance 101, Investments 101, Leverage 101 — each a
@@ -112,7 +113,7 @@ It's a plain static site, so GitHub Pages serves it as-is:
   1x comparison.
 - Then type *"what should I buy"* → the **guardrail card**, not an answer.
 - Simulate a **50/50 S&P + Bond ETF** split → see the **diversification callout**.
-- Open **My Coins** to watch the balance climb as you learn and explore.
+- Tap the **coin counter** (top-right) to watch your balance climb as you learn and explore.
 
 ## How it would work in production
 
@@ -132,13 +133,13 @@ work; the decision always belongs to the person.
 
 | File | Purpose |
 |------|---------|
-| [`index.html`](index.html) | Page structure: header, tabs, three panels, modal. |
+| [`index.html`](index.html) | Page structure: header, two tabs, panels, coins overlay, modals. |
 | [`style.css`](style.css) | Vivid magenta-on-white brand (Lemonade-inspired); all colors are `:root` variables. |
 | [`app.js`](app.js) | The results-aware **Coach** (in the Simulate tab): guardrail rules, context answers, general Q&A bank, streaming, chips. |
 | [`simulate.js`](simulate.js) | The Simulator: multi-asset leverage math, margin calls, SVG chart, count-up, and the `SimulationContext` it hands the Coach. |
 | [`learn.js`](learn.js) | The Learn course marketplace: course/lesson/quiz UI, progress, and the "try it in the Simulator" bridge. |
 | [`data/courses.js`](data/courses.js) | Course content (Finance 101, Investments 101, Leverage 101) — PM-editable. |
-| [`coins.js`](coins.js) | My Coins tab: balance display and coin animation. |
+| [`coins.js`](coins.js) | My Coins overlay (opened from the header counter): balance + coin animation. |
 | [`store.js`](store.js) | Shared coin/flag state, persisted to `localStorage`. |
 | [`data/*.js`](data/) | Approximate monthly index data (S&P 500, NASDAQ, Dow, TA-35, Bond ETF), for the simulator. |
 
