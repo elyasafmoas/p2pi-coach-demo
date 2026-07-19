@@ -247,7 +247,8 @@
         <h3>Want to get smarter every week? 📬</h3>
         <p>The <strong>P2π Weekly</strong> — 3 minutes on markets, money, and one thing worth learning.</p>
         <form class="pf-news-form" id="pf-news-form" novalidate>
-          <input type="email" id="pf-email" class="pf-email" placeholder="you@example.com" aria-label="Email address" />
+          <input type="email" id="pf-email" class="pf-email" inputmode="email" autocomplete="email"
+            placeholder="your@email.com" aria-label="Email address" />
           <button type="submit" class="run-btn pf-subscribe">Count me in</button>
         </form>
         <p class="pf-news-err" id="pf-news-err" hidden></p>
@@ -256,15 +257,21 @@
     const form = document.getElementById("pf-news-form");
     const email = document.getElementById("pf-email");
     const err = document.getElementById("pf-news-err");
+
+    // Validation runs ONLY on submit; the message clears as soon as the user edits.
+    function clearError() { err.hidden = true; err.textContent = ""; }
+    email.addEventListener("input", clearError);
+
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       const val = email.value.trim();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
-        err.hidden = false;
         err.textContent = "Hmm, that doesn't look like an email — mind checking it? 🙂";
+        err.hidden = false;
         email.focus();
         return;
       }
+      clearError();
       try { localStorage.setItem(NEWS_KEY, "1"); } catch (e2) { /* ignore */ }
       renderNewsletterSuccess(true);
     });
