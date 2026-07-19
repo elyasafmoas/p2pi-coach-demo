@@ -41,6 +41,47 @@
     return { ...a, today, allocated, profit: p, pct: (p / allocated) * 100 };
   });
 
+  /* ---------- hedging / "insurance" mechanics (all simplified & illustrative) ---------- */
+  // Illustrative USD/ILS daily series — NOT a live feed. A gentle wave used only
+  // to demonstrate the currency-shield mechanic (the baked US-asset ₪ values are
+  // treated as embedding this FX, so the shield "removes" its wobble).
+  const FX_ANCHORS = [3.70, 3.78, 3.66, 3.72, 3.75];
+  const fx = series.map((_, i) => {
+    const seg = (i / (series.length - 1)) * (FX_ANCHORS.length - 1);
+    const a = Math.min(Math.floor(seg), FX_ANCHORS.length - 2);
+    return FX_ANCHORS[a] + (FX_ANCHORS[a + 1] - FX_ANCHORS[a]) * (seg - a);
+  });
+  const fx0 = fx[0], fxEnd = fx[fx.length - 1];
+
+  const US_IDS = ["sp500", "nasdaq", "dow", "agg"]; // TA-35 is the only local asset
+  const usValueAt = (row) => US_IDS.reduce((s, id) => s + row.assets[id], 0);
+  const usEnd = usValueAt(last);
+  const monthsElapsed =
+    (new Date(last.date) - new Date(data.investedDate)) / (1000 * 60 * 60 * 24) / 30.44;
+
+  // Currency shield: 0.1%/month of protected (US) value; flattens FX wobble.
+  const currencyPremium = Math.round(0.001 * monthsElapsed * usEnd);
+  const fxComponentEnd = usEnd * (1 - fx0 / fxEnd); // FX-driven ₪ on US assets at today
+  let currencyWobble = 0;
+  series.forEach((row, i) => {
+    const dev = Math.abs(usValueAt(row) * (fx[i] / fx0 - 1));
+    if (dev > currencyWobble) currencyWobble = dev;
+  });
+  currencyWobble = Math.round(currencyWobble);
+
+  // Loss protection: a simplified put — floor at −10%, one-time 1.5% premium.
+  const lossFloor = Math.round(invested * 0.9);      // ₪9,000
+  const lossPremium = Math.round(invested * 0.015);  // ₪150
+
+  let currencyOn = false, lossOn = false, currentPeriod = "YTD";
+  // Net-of-premium balance shown on the KPI cards when protections are toggled.
+  function displayedTotal() {
+    let t = balance;
+    if (currencyOn) t += -fxComponentEnd - currencyPremium; // remove FX gain + pay premium
+    if (lossOn) t += Math.max(0, lossFloor - balance) - lossPremium; // payout (0 here) − premium
+    return t;
+  }
+
   /* ---------- best / worst insight (computed) ---------- */
   const best = holdings.reduce((m, h) => (h.pct > m.pct ? h : m), holdings[0]);
   const worst = holdings.reduce((m, h) => (h.pct < m.pct ? h : m), holdings[0]);
@@ -62,10 +103,11 @@
       <div class="pf-live"><span class="pf-dot"></span> Demo account</div>
       <div class="pf-balance-label">Total balance</div>
       <div class="pf-balance num-key" id="pf-balance">${shk(balance)}</div>
-      <div class="pf-pl">
+      <div class="pf-pl" id="pf-pl">
         <span class="${up ? "num-positive" : "num-negative"}">${up ? "+" : "−"}${shk2(Math.abs(profit))}</span>
         <span class="${up ? "num-positive" : "num-negative"}">(${up ? "+" : "−"}${Math.abs(pct).toFixed(2)}%)</span>
       </div>
+      <div class="pf-protect-note" id="pf-protect-note" hidden>🛡️ includes protection costs</div>
       <div class="pf-invested">Invested: ${shk(invested)} · ${fmtDate(data.investedDate)}</div>
     </div>
 
@@ -85,6 +127,9 @@
     <p class="pf-hint">Tap a holding to trace its line on the chart above.</p>
 
     <div class="diversify-note" id="pf-insight">${insight}</div>
+
+    <!-- Protection / hedging (demo) -->
+    <div class="pf-protect" id="pf-protect"></div>
 
     <!-- Newsletter (demo) -->
     <div class="pf-news" id="pf-news"></div>
@@ -131,9 +176,10 @@
     const C_MUTED = cssVar("--color-text-muted") || "#6B6B6B";
     const W = 340, H = 170, padX = 8, padTop = 14, padBot = 22;
     // Stable scale over the total + every asset line + invested, so toggling a
-    // line just reveals it (no jarring rescale).
+    // line just reveals it (no jarring rescale). Include the loss floor when on.
     let all = totalVals.concat([invested]);
     assetLines.forEach((s) => (all = all.concat(s.vals)));
+    if (lossOn) all = all.concat([lossFloor]);
     const lo = Math.min(...all), hi = Math.max(...all), range = hi - lo || 1;
     const x = (i) => padX + (i * (W - 2 * padX)) / Math.max(1, rows.length - 1);
     const y = (v) => padTop + (H - padTop - padBot) * (1 - (v - lo) / range);
@@ -159,6 +205,8 @@
         <path d="${area}" fill="url(#pfFill)"/>
         <line x1="${padX}" y1="${baseY}" x2="${W - padX}" y2="${baseY}" stroke="${C_MUTED}" stroke-width="1" stroke-dasharray="3 3" opacity="0.6"/>
         <text x="${padX}" y="${(+baseY - 4).toFixed(1)}" fill="${C_MUTED}" font-size="8">invested ${shk(invested)}</text>
+        ${lossOn ? `<line x1="${padX}" y1="${y(lossFloor).toFixed(1)}" x2="${W - padX}" y2="${y(lossFloor).toFixed(1)}" stroke="${cssVar("--color-warning") || "#E5484D"}" stroke-width="1.5" stroke-dasharray="5 3"/>
+        <text x="${W - padX}" y="${(y(lossFloor) - 4).toFixed(1)}" text-anchor="end" fill="${cssVar("--color-warning") || "#E5484D"}" font-size="8" font-weight="700">protection floor ${shk(lossFloor)}</text>` : ""}
         ${legLines}
         <polyline points="${totalLine}" fill="none" stroke="${C}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
         <circle cx="${endX.toFixed(1)}" cy="${endY.toFixed(1)}" r="3.5" fill="${C}"/>
@@ -228,9 +276,129 @@
   periodBox.querySelectorAll(".pf-chip").forEach((chip) => {
     chip.addEventListener("click", () => {
       periodBox.querySelectorAll(".pf-chip").forEach((c) => c.classList.toggle("active", c === chip));
-      drawChart(chip.dataset.p);
+      currentPeriod = chip.dataset.p;
+      drawChart(currentPeriod);
     });
   });
+
+  /* ---------- protection / hedging (demo) ---------- */
+  const EXPLAINERS = {
+    currency: {
+      title: "Currency shield 🛡️",
+      body: [
+        "When you own U.S. investments, your money takes two rides at once: how the stocks do, AND how the dollar moves against the shekel. A currency shield (in real life, an FX hedge) is basically insurance on that second ride — it locks in today's exchange rate so a swinging dollar doesn't add extra bumps to your balance.",
+        "Like any insurance, it isn't free — you pay a small ongoing premium, and in calm currency times it can feel like money spent for nothing. Big funds hedge to make their returns smoother and more predictable, especially when they can't afford surprises. Whether that smoothness is worth the cost is a personal call — I just show you the mechanics.",
+      ],
+    },
+    loss: {
+      title: "Loss protection 🛡️",
+      body: [
+        "Loss protection here works like a put option — think of it as a deductible in reverse. You pay a one-time premium up front, and in exchange there's a floor under your account: no matter how bad things get, your balance can't fall below a set level (here, −10%, or ₪9,000). The scary downside gets capped.",
+        "The trade-off is real: that premium comes straight off the top, so in good times you keep a little less. Professionals buy this kind of protection when the peace of mind — or not being forced to sell in a crash — is worth more than the cost. Whether it's worth it for you is a personal call — I just show you the mechanics.",
+      ],
+    },
+  };
+
+  function renderProtect() {
+    const el = document.getElementById("pf-protect");
+    el.innerHTML = `
+      <h2 class="pf-section">Protect your portfolio 🛡️</h2>
+      <p class="pf-protect-intro">Investors can buy protection — like insurance for your money. Try toggling these and watch what they'd do.</p>
+
+      <div class="pf-product">
+        <div class="pf-product-head">
+          <div class="pf-product-info">
+            <div class="pf-product-name">Currency shield</div>
+            <div class="pf-product-desc">Protects your U.S. assets from USD/ILS exchange swings.</div>
+          </div>
+          <label class="pf-switch"><input type="checkbox" id="pf-currency" aria-label="Currency shield" /><span class="pf-track"></span></label>
+        </div>
+        <div class="pf-product-detail" id="pf-currency-detail" hidden></div>
+        <div class="pf-product-foot">
+          <button class="pf-explain" type="button" data-explain="currency">How does this work?</button>
+          <span class="pf-price">Illustrative pricing · 0.1%/month of protected value</span>
+        </div>
+      </div>
+
+      <div class="pf-product">
+        <div class="pf-product-head">
+          <div class="pf-product-info">
+            <div class="pf-product-name">Loss protection</div>
+            <div class="pf-product-desc">Caps your maximum loss at −10% (${shk(lossFloor)}) — like a deductible in reverse.</div>
+          </div>
+          <label class="pf-switch"><input type="checkbox" id="pf-loss" aria-label="Loss protection" /><span class="pf-track"></span></label>
+        </div>
+        <div class="pf-product-detail" id="pf-loss-detail" hidden></div>
+        <div class="pf-product-foot">
+          <button class="pf-explain" type="button" data-explain="loss">How does this work?</button>
+          <span class="pf-price">Illustrative pricing · 1.5% of protected value, one-time</span>
+        </div>
+      </div>
+      <div class="pf-coin-flash" id="pf-coin-flash" hidden></div>`;
+
+    document.getElementById("pf-currency").addEventListener("change", (e) => { currencyOn = e.target.checked; onToggle(); });
+    document.getElementById("pf-loss").addEventListener("change", (e) => { lossOn = e.target.checked; onToggle(); });
+    el.querySelectorAll(".pf-explain").forEach((b) => b.addEventListener("click", () => openExplainer(b.dataset.explain)));
+  }
+
+  function onToggle() {
+    const cd = document.getElementById("pf-currency-detail");
+    if (currencyOn) {
+      cd.hidden = false;
+      cd.innerHTML = `Without shield: your U.S. assets carry currency ups and downs of <strong>±${shk(currencyWobble)}</strong> this period · ` +
+        `With shield: that wobble is flattened — for a total premium of <strong>${shk(currencyPremium)}</strong> since Jan 1.`;
+    } else cd.hidden = true;
+
+    const ld = document.getElementById("pf-loss-detail");
+    if (lossOn) {
+      ld.hidden = false;
+      ld.innerHTML = `Your balance could never have fallen below <strong>${shk(lossFloor)}</strong> — cost: <strong>${shk(lossPremium)}</strong>.`;
+    } else ld.hidden = true;
+
+    updateKPIs();
+    drawChart(currentPeriod);
+
+    // +5 the first time any protection is tried.
+    const got = P2Pi.awardOnce("protection_tried", 5);
+    if (got > 0) {
+      if (typeof showCoinToast === "function") showCoinToast(5, false);
+      const f = document.getElementById("pf-coin-flash");
+      f.textContent = "🪙 Curiosity pays — +5 coins for exploring!";
+      f.hidden = false;
+      setTimeout(() => { f.hidden = true; }, 2800);
+    }
+  }
+
+  function updateKPIs() {
+    const t = displayedTotal();
+    const p = t - invested;
+    const gain = p >= 0;
+    balanceEl.textContent = shk(t);
+    document.getElementById("pf-pl").innerHTML =
+      `<span class="${gain ? "num-positive" : "num-negative"}">${gain ? "+" : "−"}${shk2(Math.abs(p))}</span> ` +
+      `<span class="${gain ? "num-positive" : "num-negative"}">(${gain ? "+" : "−"}${Math.abs((p / invested) * 100).toFixed(2)}%)</span>`;
+    document.getElementById("pf-protect-note").hidden = !(currencyOn || lossOn);
+  }
+
+  // Explainer overlay (Coach voice).
+  function openExplainer(kind) {
+    const ov = document.getElementById("pf-explain-overlay");
+    const ex = EXPLAINERS[kind];
+    if (!ov || !ex) return;
+    document.getElementById("pf-explain-title").textContent = ex.title;
+    document.getElementById("pf-explain-body").innerHTML = ex.body.map((p) => `<p>${p}</p>`).join("");
+    ov.hidden = false;
+  }
+  (function wireExplainer() {
+    const ov = document.getElementById("pf-explain-overlay");
+    if (!ov) return;
+    const close = () => (ov.hidden = true);
+    document.getElementById("pf-explain-close").addEventListener("click", close);
+    ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+  })();
+
+  renderProtect();
 
   /* ---------- newsletter (demo) ---------- */
   // In production this would POST the email to a mailing-list service. The demo

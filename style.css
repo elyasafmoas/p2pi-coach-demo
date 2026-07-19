@@ -739,6 +739,75 @@ body {
 /* Disclaimer anchored under the last card (part of the dashboard, not an orphan) */
 .pf-inner .sim-disclaimer { margin: 18px 0 0; font-size: 11.5px; text-align: center; }
 
+/* --- Protection / hedging (demo) --- */
+.pf-protect-note { font-size: 12px; color: var(--color-text-muted); font-weight: 600; margin-top: 4px; }
+.pf-protect-note[hidden] { display: none; }
+.pf-protect-intro { margin: 0 0 14px; font-size: 14px; color: var(--color-text-muted); }
+.pf-product {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 15px 16px;
+  margin-bottom: 12px;
+}
+.pf-product-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pf-product-info { min-width: 0; }
+.pf-product-name { font-weight: 800; font-size: 15px; color: var(--color-text); }
+.pf-product-desc { font-size: 13px; color: var(--color-text-muted); margin-top: 2px; }
+.pf-product-detail {
+  margin-top: 12px;
+  background: var(--color-primary-soft);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  font-size: 13.5px;
+  color: var(--color-text);
+  line-height: 1.5;
+}
+.pf-product-detail[hidden] { display: none; }
+.pf-product-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.pf-explain {
+  background: none; border: none; padding: 0;
+  color: var(--color-primary); font-weight: 700; font-size: 13px;
+  text-decoration: underline; text-underline-offset: 3px;
+  cursor: pointer; font-family: inherit;
+}
+.pf-explain:hover { color: var(--color-primary-dark); }
+.pf-price { font-size: 11.5px; color: var(--color-text-muted); font-weight: 600; }
+.pf-coin-flash {
+  text-align: center; font-size: 13.5px; font-weight: 700;
+  color: var(--color-primary); margin: 4px 0 2px;
+  animation: coachFadeIn 0.25s ease;
+}
+.pf-coin-flash[hidden] { display: none; }
+
+/* iOS-style toggle switch */
+.pf-switch { position: relative; flex: 0 0 auto; width: 46px; height: 26px; cursor: pointer; }
+.pf-switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.pf-track {
+  position: absolute; inset: 0;
+  background: var(--color-border);
+  border-radius: 999px;
+  transition: background 0.18s;
+}
+.pf-track::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; box-shadow: var(--shadow-sm);
+  transition: transform 0.18s;
+}
+.pf-switch input:checked + .pf-track { background: var(--color-primary); }
+.pf-switch input:checked + .pf-track::after { transform: translateX(20px); }
+.pf-switch input:focus-visible + .pf-track { box-shadow: 0 0 0 3px rgba(255, 0, 131, 0.25); }
+
+/* Explainer overlay brand line (Coach voice) */
+.pf-explain-brand { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 14px; margin-bottom: 8px; }
+.pf-explain-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--color-primary-soft); color: var(--color-primary);
+  display: grid; place-items: center; font-weight: 800;
+}
+#pf-explain-body p { font-size: 14.5px; line-height: 1.6; color: var(--color-text); margin: 0 0 12px; }
+
 /* Mobile: donut on top, holdings stacked below (no squish) */
 @media (max-width: 560px) {
   .pf-alloc { flex-direction: column; align-items: stretch; gap: 12px; }
