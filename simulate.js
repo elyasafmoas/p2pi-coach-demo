@@ -1,13 +1,18 @@
 /* ============================================================
-   Tab 2 — Simulate: a historical S&P 500 "time machine".
+   Tab 2 — Simulate: a historical "time machine" over any index.
 
-   Pure JS math over data/sp500_monthly.js, plus a small hand-rolled
-   SVG line chart (no chart library, no dependencies).
+   Pure JS math over the asset modules in data/ (each self-registers
+   into window.P2PI_ASSETS), plus a small hand-rolled SVG line chart
+   (no chart library, no dependencies).
+
+   The student picks ONE asset per run in this stage; the code is
+   structured so splitting across several assets can be added cleanly
+   (see runSimulationMath and the picker note in initSimulator).
 
    Teaching model (kept simple for students, not traders):
    - exposure  = amount × leverage           (how much you control)
    - borrowed  = amount × (leverage − 1)      (the lender's money)
-   - each month the whole exposure moves with the S&P 500 return
+   - each month the whole exposure moves with the chosen index's return
    - the borrowed part accrues a simple financing cost
    - MARGIN CALL: if your own money (equity) becomes too thin a slice of
      the position, the lender closes you out — a teaching moment.
@@ -37,11 +42,16 @@ function prettyMonth(ym) {
 }
 
 /* ------------------------------------------------------------
-   The core simulation. Returns the month-by-month equity journey
-   plus the summary numbers the UI needs.
+   The core simulation for ONE asset. Returns the month-by-month
+   equity journey plus the summary numbers the UI needs.
+
+   Structured for the next stage (splitting across assets): a split
+   simulation would call this per asset leg with each leg's share of
+   the amount, then combine the per-month equities. Keeping this a
+   pure function of (amount, year, leverage, asset) makes that clean.
    ------------------------------------------------------------ */
-function runSimulationMath(amount, startYear, leverage) {
-  const data = window.SP500_MONTHLY;
+function runSimulationMath(amount, startYear, leverage, asset) {
+  const data = asset.monthlyData;
   const startPoint = data.find((p) => p.date === startYear + "-01") || data[0];
   const slice = data.slice(data.indexOf(startPoint));
 
@@ -86,6 +96,7 @@ function runSimulationMath(amount, startYear, leverage) {
     amount,
     startYear,
     leverage,
+    asset,
     finalValue,
     profit: finalValue - amount,
     pct: (finalValue / amount - 1) * 100,
@@ -105,8 +116,9 @@ function cssVar(name) {
 }
 
 function buildChart(result) {
-  const { points, amount, worst } = result;
-  const C_PRIMARY = cssVar("--color-primary") || "#FF0083";
+  const { points, amount, worst, asset } = result;
+  // The line takes the asset's own colour so each index reads distinctly.
+  const C_PRIMARY = (asset && asset.color) || cssVar("--color-primary") || "#FF0083";
   const C_WARNING = cssVar("--color-warning") || "#E5484D";
   const C_MUTED = cssVar("--color-text-muted") || "#6B6B6B";
   const W = 340, H = 160, padX = 8, padTop = 14, padBot = 22;
@@ -198,9 +210,48 @@ function countUp(el, target) {
   const yearVal = document.getElementById("year-val");
   const levVal = document.getElementById("lev-val");
   const levHint = document.getElementById("lev-hint");
+  const yearNote = document.getElementById("year-note");
+  const picker = document.getElementById("asset-picker");
   const runBtn = document.getElementById("run-btn");
   const results = document.getElementById("sim-results");
   if (!amt) return; // Simulate panel not on the page
+
+  const ASSETS = window.P2PI_ASSETS || [];
+  // In this stage the student picks ONE asset. (Next stage: an array of
+  // {asset, weight} allocations — the picker + run loop would iterate that.)
+  let selectedAsset = ASSETS[0];
+
+  // Build the horizontal asset cards.
+  function renderPicker() {
+    picker.innerHTML = "";
+    ASSETS.forEach((asset) => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "asset-card" + (asset === selectedAsset ? " selected" : "");
+      card.setAttribute("role", "radio");
+      card.setAttribute("aria-checked", asset === selectedAsset ? "true" : "false");
+      card.innerHTML =
+        `<span class="asset-name"><span class="asset-dot" style="background:${asset.color}"></span>${asset.shortName}</span>` +
+        `<span class="asset-desc">${asset.description}</span>`;
+      card.addEventListener("click", () => selectAsset(asset));
+      picker.appendChild(card);
+    });
+  }
+
+  function selectAsset(asset) {
+    selectedAsset = asset;
+    renderPicker();
+    adaptYearRange();
+  }
+
+  // Clamp the year slider's minimum to the asset's earliest reliable year.
+  function adaptYearRange() {
+    const minYear = +selectedAsset.earliestReliableDate.slice(0, 4);
+    year.min = minYear;
+    if (+year.value < minYear) year.value = minYear;
+    yearNote.textContent = `📅 Data available from ${minYear} for ${selectedAsset.shortName}.`;
+    refreshLabels();
+  }
 
   // Live labels for the sliders.
   function refreshLabels() {
@@ -210,11 +261,14 @@ function countUp(el, target) {
     levHint.hidden = +lev.value <= 1; // hint only appears above 1x
   }
   [amt, year, lev].forEach((s) => s.addEventListener("input", refreshLabels));
+
+  renderPicker();
+  adaptYearRange(); // sets note + clamps for the default asset
   refreshLabels();
 
   runBtn.addEventListener("click", () => {
     const leverage = +lev.value;
-    const result = runSimulationMath(+amt.value, +year.value, leverage);
+    const result = runSimulationMath(+amt.value, +year.value, leverage, selectedAsset);
     renderResults(result);
 
     // Reward exploration with coins (shared state; My Coins reads it too).
@@ -229,6 +283,12 @@ function countUp(el, target) {
 
     document.getElementById("r-amount").textContent = shekels(r.amount);
     document.getElementById("r-year").textContent = r.startYear;
+    document.getElementById("r-asset").textContent = r.asset.shortName;
+
+    // Chart legend: colour dot + full asset name.
+    document.getElementById("chart-legend").innerHTML =
+      `<span class="asset-dot" style="background:${r.asset.color}"></span>` +
+      `<span>${r.asset.name}</span>`;
 
     // Profit / loss line, coloured green up / red down.
     const profitEl = document.getElementById("r-profit");

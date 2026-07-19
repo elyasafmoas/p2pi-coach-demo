@@ -72,8 +72,15 @@
         <!-- Friendly controls -->
         <div class="sim-card">
           <h2 class="sim-title">Time machine 📈</h2>
-          <p class="sim-sub">Pick an amount, a starting year, and how bold you want to be —
-            we'll replay real S&amp;P 500 history and show what would've happened.</p>
+          <p class="sim-sub">Pick an index, an amount, a starting year, and how bold you want
+            to be — we'll replay real market history and show what would've happened.</p>
+
+          <div class="control">
+            <label>Which index?</label>
+            <div class="asset-picker" id="asset-picker" role="radiogroup" aria-label="Choose an index">
+              <!-- Asset cards injected by simulate.js -->
+            </div>
+          </div>
 
           <div class="control">
             <label for="amt">How much? <span class="ctl-val" id="amt-val">₪1,000</span></label>
@@ -83,6 +90,7 @@
           <div class="control">
             <label for="year">Starting year <span class="ctl-val" id="year-val">2015</span></label>
             <input type="range" id="year" min="1985" max="2024" step="1" value="2015" />
+            <p class="year-note" id="year-note"></p>
           </div>
 
           <div class="control">
@@ -97,13 +105,15 @@
         <!-- Results (revealed after a run) -->
         <div class="sim-results" id="sim-results" hidden>
           <div class="result-headline">
-            <span class="result-label">If you'd invested <span id="r-amount"></span> in <span id="r-year"></span>, today you'd have</span>
+            <span class="result-label">If you'd invested <span id="r-amount"></span> in
+              <span id="r-asset"></span> in <span id="r-year"></span>, today you'd have</span>
             <span class="result-value num-key" id="r-final">₪0</span>
             <span class="result-pl">
               <span id="r-profit"></span> <span id="r-pct"></span>
             </span>
           </div>
 
+          <div class="chart-legend" id="chart-legend"></div>
           <div class="chart-wrap" id="chart-wrap"></div>
 
           <p class="worst-note" id="worst-note" hidden></p>
@@ -183,7 +193,11 @@
   <!-- Coin "+N" toast -->
   <div class="toast" id="toast" hidden></div>
 
-  <script src="data/sp500_monthly.js"></script>
+  <!-- Asset modules self-register into window.P2PI_ASSETS (order = display order) -->
+  <script src="data/sp500.js"></script>
+  <script src="data/nasdaq.js"></script>
+  <script src="data/dow.js"></script>
+  <script src="data/ta35.js"></script>
   <script src="store.js"></script>
   <script src="app.js"></script>
   <script src="simulate.js"></script>

@@ -96,11 +96,35 @@ const QA_BANK = [
   },
   {
     id: "sp500",
-    keywords: ["s&p", "sp500", "s and p", "500", "index", "index fund", "basket"],
+    keywords: ["s&p", "sp500", "s and p", "500", "index fund", "basket"],
     answer:
       "The S&P 500 is basically a basket that tracks 500 of the largest companies in the U.S. — names you’d recognize like Apple, Microsoft, and many more. Instead of betting on one company, you’re spread across all of them at once, so if a few stumble, the others help balance it out. That built-in diversification is why so many people treat a broad index like this as a starting point for learning: it’s one simple way to get exposure to “the market overall” rather than trying to pick individual winners.",
     followUp: "Want to understand what happens to an index like this when the market drops?",
     chips: ["What happens if the market drops after I invest?", "What fees would I pay?", "What does volatility mean?"],
+  },
+  {
+    id: "nasdaq",
+    keywords: ["nasdaq", "nas daq", "tech index", "tech-heavy", "composite"],
+    answer:
+      "The NASDAQ Composite is another big U.S. index, but it leans heavily toward technology — think companies like Apple, Microsoft, Nvidia, and lots of younger tech names. Because tech tends to grow fast but also swing hard, the NASDAQ usually rises more in good times and falls more in rough ones than a broader index like the S&P 500. That extra bounce is exactly what “higher volatility” feels like. It’s a great example of the trade-off between bigger potential gains and a bumpier ride.",
+    followUp: "Want to see how that bumpier ride looks in the Simulator?",
+    chips: ["What does volatility mean?", "What is the Dow Jones?", "What is the S&P 500?"],
+  },
+  {
+    id: "dow",
+    keywords: ["dow jones", "dow", "djia", "industrial average", "30 companies", "blue chip"],
+    answer:
+      "The Dow Jones Industrial Average — usually just “the Dow” — tracks 30 large, well-established U.S. companies, the kind you hear about on the news. It’s one of the oldest and most famous market measures, so people often quote it as shorthand for “how the market did today.” Because it’s only 30 big, steady companies, it tends to move a little more calmly than a tech-heavy index like the NASDAQ. It’s a simple window into how big American businesses are doing overall.",
+    followUp: "Curious how the Dow compares to a tech-heavy index like the NASDAQ?",
+    chips: ["What is the NASDAQ?", "What is the S&P 500?", "What does volatility mean?"],
+  },
+  {
+    id: "ta35",
+    keywords: ["ta-35", "ta35", "ta 35", "ta-25", "tel aviv", "tel-aviv", "israel", "israeli", "maof"],
+    answer:
+      "The TA-35 is Israel’s leading stock index — it follows the 35 largest companies traded on the Tel Aviv Stock Exchange, including big Israeli banks and firms you might know locally. Just like the S&P 500 does for the U.S., the TA-35 gives a quick read on how Israel’s biggest companies are doing overall. It’s a popular starting point for people who want exposure to the local market they see around them every day, rather than only investing abroad.",
+    followUp: "Want to try investing in the TA-35 in the Simulator?",
+    chips: ["What is the S&P 500?", "What is the NASDAQ?", "What does volatility mean?"],
   },
   {
     id: "drop",
