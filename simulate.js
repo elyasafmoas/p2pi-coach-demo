@@ -507,8 +507,8 @@ function countUp(el, target) {
     const bonus = leverage > 1 ? P2Pi.awardOnce("leverage_tried", 5) : 0;
     showCoinToast(COINS_PER_RUN + bonus, bonus > 0);
 
-    // Hand a results-aware context to the Coach (lives in this tab now).
-    const diversificationShown = !document.getElementById("diversify-note").hidden;
+    // Hand a results-aware context to the Coach (which now narrates the result).
+    const diversification = computeDiversification(+amt.value, +year.value, leverage, result.worst.drop);
     // 1x counterfactual (same picks/allocation/amount/year) for the Coach's math.
     let oneX = result;
     if (leverage !== 1) oneX = runPortfolioSimulation(+amt.value, +year.value, 1, allocations);
@@ -523,7 +523,7 @@ function countUp(el, target) {
       totalPct: result.pct,
       worstYear: { year: result.worst.year, drop: result.worst.drop },
       marginCall: { happened: !!result.marginCall, date: result.marginCall ? result.marginCall.date : null },
-      diversificationShown,
+      diversification,
       oneXFinal: oneX.finalValue,
       oneXProfit: oneX.profit,
     };
@@ -595,39 +595,9 @@ function countUp(el, target) {
     // Per-asset breakdown table (only meaningful for a split).
     renderBreakdown(r, multi);
 
-    // Honest "worst dip" storytelling — always in shekels.
-    const worstNote = document.getElementById("worst-note");
-    if (r.worst.drop > 0) {
-      worstNote.hidden = false;
-      worstNote.innerHTML =
-        `😬 On the way, around <strong>${r.worst.year}</strong> you'd have been down ` +
-        `<strong>${shekels(r.worst.drop)}</strong> from your high point — investing has ` +
-        `bumps, and that's completely normal.`;
-    } else {
-      worstNote.hidden = true;
-    }
-
-    // Diversification teaching callout — only when it's actually true.
-    renderDiversifyNote(r, multi);
-
-    // Margin-call teaching card (only when leverage wiped out the cushion).
-    const marginCard = document.getElementById("margin-card");
-    if (r.marginCall) {
-      marginCard.hidden = false;
-      marginCard.innerHTML = `
-        <div class="mc-head"><span class="mc-icon">⚠️</span>
-          <span class="mc-title">Margin call — the big lesson about leverage</span></div>
-        <p>Because you used <strong>${r.leverage}x leverage</strong>, you were investing with
-        borrowed money. When the market fell in <strong>${prettyMonth(r.marginCall.date)}</strong>,
-        your losses grew about ${r.leverage}× as fast. Once your own money shrank to a thin
-        cushion, the lender automatically sold your position to protect their loan — that's a
-        <strong>margin call</strong>. You walked away with roughly ${shekels(r.marginCall.equity)}.</p>
-        <p class="mc-lesson">The lesson: leverage can multiply gains, but a big enough dip can
-        wipe you out <em>before</em> the market ever recovers. At <strong>1x</strong> you'd have
-        stayed invested and could have ridden it back up.</p>`;
-    } else {
-      marginCard.hidden = true;
-    }
+    // NOTE: the worst-year, margin-call and diversification COMMENTARY used to
+    // render here as static cards. They now live in the Coach's narration so the
+    // page has a single voice — see window.P2PICoach.onSimulation().
 
     // Animate the headline number last so it's the thing the eye lands on.
     countUp(document.getElementById("r-final"), r.finalValue);
@@ -681,25 +651,16 @@ function countUp(el, target) {
       </table>`;
   }
 
-  // Show the diversification callout ONLY when the split's worst year is
-  // genuinely milder than the worst single asset's worst year (both in ₪).
-  function renderDiversifyNote(r, multi) {
-    const note = document.getElementById("diversify-note");
-    if (!multi) { note.hidden = true; return; }
+  // Whether diversification softened the worst year — the split's worst drop vs
+  // the worst single asset's worst drop (both in ₪). Fed to the Coach's narration.
+  function computeDiversification(amount, startYear, leverage, portfolioWorstDrop) {
+    if (selected.length < 2) return { applies: false, worstSingle: 0, worstName: "" };
     let worstSingle = 0, worstName = "";
     selected.forEach((a) => {
-      const solo = runSimulationMath(+amt.value, +year.value, +lev.value, a);
+      const solo = runSimulationMath(amount, startYear, leverage, a);
       if (solo.worst.drop > worstSingle) { worstSingle = solo.worst.drop; worstName = a.shortName; }
     });
-    if (worstSingle > 0 && r.worst.drop < worstSingle) {
-      note.hidden = false;
-      note.innerHTML =
-        `🌱 <strong>Notice:</strong> spreading your money softened the worst year — your mix was ` +
-        `only down <strong>${shekels(r.worst.drop)}</strong>, versus <strong>${shekels(worstSingle)}</strong> ` +
-        `if you'd put it all in ${worstName}. That's <strong>diversification</strong> at work.`;
-    } else {
-      note.hidden = true;
-    }
+    return { applies: worstSingle > 0 && portfolioWorstDrop < worstSingle, worstSingle, worstName };
   }
 })();
 

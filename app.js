@@ -412,8 +412,10 @@ function contextChips(ctx) {
   if (!ctx) return [];
   const specific = [];
   if (ctx.marginCall.happened) specific.push(cchip("What just happened to my money?", "margincall"));
-  if (ctx.worstYear.drop > 0 && ["2000", "2008", "2020", "2022"].includes(String(ctx.worstYear.year))) {
-    specific.push(cchip(`Why did everything drop in ${ctx.worstYear.year}?`, "worstyear"));
+  if (ctx.worstYear.drop > 0) {
+    const y = String(ctx.worstYear.year);
+    const label = ["2000", "2008", "2020", "2022"].includes(y) ? `Why did everything drop in ${y}?` : "Why did that happen?";
+    specific.push(cchip(label, "worstyear"));
   }
   if (ctx.leverage > 1) specific.push(cchip("What would 1x have looked like?", "leveragecompare"));
   if (ctx.assets.length === 1) specific.push(cchip("What if I had split my money?", "diversify"));
@@ -526,21 +528,121 @@ window.P2PICoach = {
     coachChips.innerHTML = "";
     if (coachHint) coachHint.hidden = true;      // results exist now
     if (coachFab) coachFab.hidden = false;       // mobile entry point
-    introFor(ctx);
+    // Badge/pulse the mobile pill when narration lands while the sheet is closed
+    // (on desktop the panel is always visible, so the pulse simply doesn't show).
+    if (coachFab && !(coachPanel && coachPanel.classList.contains("open"))) coachFab.classList.add("pulse");
+
+    // First run of a session (incl. right after "Start over") → full agent
+    // experience; repeat runs in the same session → snappy condensed narration.
+    let firstOfSession = true;
+    try {
+      firstOfSession = !sessionStorage.getItem("p2pi_narrated");
+      sessionStorage.setItem("p2pi_narrated", "1");
+    } catch (e) { /* sessionStorage may be blocked */ }
+
+    if (firstOfSession) narrateFull(ctx);
+    else narrateSnappy(ctx);
   },
   reset() {
     currentContext = null;
     if (coachChat) coachChat.innerHTML = "";
     if (coachChips) coachChips.innerHTML = "";
+    if (coachFab) coachFab.classList.remove("pulse");
   },
 };
 
-async function introFor(ctx) {
-  const typing = showTyping();
-  await wait(500);
-  typing.remove();
-  await streamCoachMessage("Nice — your simulation’s done, and I can see exactly what happened. Ask me anything about it 👇", null);
+/* ------------------------------------------------------------
+   NARRATION — the Coach tells the story of the result in its own voice.
+   ------------------------------------------------------------ */
+function narrReaction(ctx) {
+  const grew = ctx.totalProfit >= 0;
+  if (grew) {
+    return `Nice — your ${shk(ctx.amount)} in ${assetList(ctx)} grew to about ${shk(ctx.finalValue)} ` +
+      `over ${ctx.startYear}–${ctx.endYear}. That's roughly ${shk(ctx.totalProfit)} of profit ` +
+      `(+${Math.abs(ctx.totalPct).toFixed(0)}%). 🎉`;
+  }
+  return `Okay — this one dipped: your ${shk(ctx.amount)} in ${assetList(ctx)} ended around ` +
+    `${shk(ctx.finalValue)} over ${ctx.startYear}–${ctx.endYear}, down about ${shk(Math.abs(ctx.totalProfit))} ` +
+    `(−${Math.abs(ctx.totalPct).toFixed(0)}%). No judgment — let's look at what happened.`;
+}
+function narrWorstYear(ctx) {
+  return `On the way there was a rough patch: around ${ctx.worstYear.year}, you were down about ` +
+    `${shk(ctx.worstYear.drop)} from your high point. Bumps like that are a normal part of investing.`;
+}
+function narrMargin(ctx) {
+  return `Your ${ctx.leverage}x leverage ran into a margin call in ${monthLabel(ctx.marginCall.date)}. ` +
+    `Because you'd borrowed, the drop hit about ${ctx.leverage}× as hard, your cushion ran out, and the ` +
+    `position was closed early — leaving roughly ${shk(ctx.finalValue)}. Tap below and I'll show what plain 1x would've done.`;
+}
+function narrDiversify(ctx) {
+  return `Nice side-effect of splitting your money: your worst year came in milder than going all-in — ` +
+    `about ${shk(ctx.worstYear.drop)} down, versus ${shk(ctx.diversification.worstSingle)} all-in on ` +
+    `${ctx.diversification.worstName}. That's diversification quietly working.`;
+}
+
+// Ordered "beats". condensed = snappy mode (reaction + one key insight).
+function buildBeats(ctx, condensed) {
+  const beats = [{ kind: "msg", text: narrReaction(ctx) }];
+  const worst = ctx.worstYear.drop > 0;
+  const margin = ctx.marginCall.happened;
+  const divers = ctx.diversification && ctx.diversification.applies;
+  if (condensed) {
+    if (margin) beats.push({ kind: "card", text: narrMargin(ctx) });
+    else if (worst) beats.push({ kind: "msg", text: narrWorstYear(ctx) });
+    else if (divers) beats.push({ kind: "msg", text: narrDiversify(ctx) });
+  } else {
+    if (worst) beats.push({ kind: "msg", text: narrWorstYear(ctx) });
+    if (margin) beats.push({ kind: "card", text: narrMargin(ctx) });
+    if (divers) beats.push({ kind: "msg", text: narrDiversify(ctx) });
+  }
+  return beats;
+}
+
+// FULL mode: thinking dots + word-by-word streaming + short pauses (< ~8s total).
+async function narrateFull(ctx) {
+  busy = true;
+  for (const beat of buildBeats(ctx, false)) {
+    const typing = showTyping();
+    await wait(340);
+    typing.remove();
+    if (beat.kind === "card") { renderShieldCard("Margin call — the leverage lesson", beat.text); await wait(240); }
+    else { await streamCoachMessage(beat.text, null); }
+    await wait(180);
+  }
   renderCoachChips(contextChips(ctx));
+  busy = false;
+}
+
+// SNAPPY mode: near-instant condensed narration (brief CSS fade-in, no streaming).
+function narrateSnappy(ctx) {
+  buildBeats(ctx, true).forEach((beat) => {
+    if (beat.kind === "card") renderShieldCard("Margin call — the leverage lesson", beat.text);
+    else appendMessageInstant(beat.text);
+  });
+  renderCoachChips(contextChips(ctx));
+}
+
+// A coach bubble that appears at once (brief CSS fade-in), no word-by-word.
+function appendMessageInstant(text) {
+  const row = document.createElement("div");
+  row.className = "msg-row coach instant";
+  row.innerHTML = `<div class="avatar">π</div><div class="bubble coach"></div>`;
+  row.querySelector(".bubble").textContent = text;
+  coachChat.appendChild(row);
+  scrollDown();
+}
+
+// A shield/guardrail-styled card, used for the margin-call beat.
+function renderShieldCard(label, text) {
+  const row = document.createElement("div");
+  row.className = "msg-row coach instant";
+  row.innerHTML =
+    `<div class="avatar">π</div>` +
+    `<div class="guardrail"><div class="gr-head"><span class="shield">🛡️</span><span class="gr-label"></span></div><div class="gr-body"></div></div>`;
+  row.querySelector(".gr-label").textContent = label;
+  row.querySelector(".gr-body").textContent = text;
+  coachChat.appendChild(row);
+  scrollDown();
 }
 
 /* ------------------------------------------------------------
@@ -558,6 +660,7 @@ function openCoachSheet() {
   if (!coachPanel) return;
   coachPanel.classList.add("open");
   if (coachBackdrop) coachBackdrop.hidden = false;
+  if (coachFab) coachFab.classList.remove("pulse"); // they've seen the narration
   if (coachInput) coachInput.focus();
   scrollDown();
 }
@@ -644,6 +747,11 @@ if (confirmYes) {
       Object.keys(localStorage)
         .filter((k) => k.toLowerCase().startsWith("p2pi"))
         .forEach((k) => localStorage.removeItem(k));
+      // Also clear the session narration flag so the reload gets the FULL agent
+      // experience again (a truly brand-new session).
+      Object.keys(sessionStorage)
+        .filter((k) => k.toLowerCase().startsWith("p2pi"))
+        .forEach((k) => sessionStorage.removeItem(k));
     } catch (e) { /* storage may be blocked; reload still gives a clean session */ }
     location.reload();
   });

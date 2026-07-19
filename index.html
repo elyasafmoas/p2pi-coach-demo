@@ -8,7 +8,7 @@
   <!-- ?v= is a cache-buster: bump it on every deploy so browsers never mix a
        new index.html with a stale cached script/style from a previous deploy
        (the root cause of the empty-asset-picker bug). -->
-  <link rel="stylesheet" href="style.css?v=stage41" />
+  <link rel="stylesheet" href="style.css?v=stage42" />
 </head>
 <body>
   <!-- ============ HEADER ============ -->
@@ -134,10 +134,8 @@
               <!-- Per-asset breakdown (shown for 2+ assets) -->
               <div class="breakdown" id="breakdown" hidden></div>
 
-              <p class="worst-note" id="worst-note" hidden></p>
-              <!-- Diversification teaching callout (only when it's actually true) -->
-              <div class="diversify-note" id="diversify-note" hidden></div>
-              <div class="margin-card" id="margin-card" hidden></div>
+              <!-- Commentary (worst year, margin call, diversification) is
+                   narrated by the Coach panel — one voice, not static cards. -->
 
               <p class="sim-disclaimer">Simulated from approximate historical data, for learning
                 only — not a prediction and not advice.</p>
@@ -246,16 +244,16 @@
 
   <!-- Asset modules self-register into window.P2PI_ASSETS (order = display order).
        ?v= cache-buster is bumped on every deploy — see the note in <head>. -->
-  <script src="data/sp500.js?v=stage41"></script>
-  <script src="data/nasdaq.js?v=stage41"></script>
-  <script src="data/dow.js?v=stage41"></script>
-  <script src="data/ta35.js?v=stage41"></script>
-  <script src="data/agg.js?v=stage41"></script>
-  <script src="data/courses.js?v=stage41"></script>
-  <script src="store.js?v=stage41"></script>
-  <script src="app.js?v=stage41"></script>
-  <script src="simulate.js?v=stage41"></script>
-  <script src="coins.js?v=stage41"></script>
-  <script src="learn.js?v=stage41"></script>
+  <script src="data/sp500.js?v=stage42"></script>
+  <script src="data/nasdaq.js?v=stage42"></script>
+  <script src="data/dow.js?v=stage42"></script>
+  <script src="data/ta35.js?v=stage42"></script>
+  <script src="data/agg.js?v=stage42"></script>
+  <script src="data/courses.js?v=stage42"></script>
+  <script src="store.js?v=stage42"></script>
+  <script src="app.js?v=stage42"></script>
+  <script src="simulate.js?v=stage42"></script>
+  <script src="coins.js?v=stage42"></script>
+  <script src="learn.js?v=stage42"></script>
 </body>
 </html>

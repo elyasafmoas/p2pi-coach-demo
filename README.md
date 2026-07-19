@@ -41,10 +41,14 @@ the earliest reliable data of your picks — e.g. TA-35 starts in 2000, the Bond
 and a **leverage** level (1x–5x), then hit *"Show me what would've happened."*
 
 **The Coach now lives here, and it's results-aware.** Once a simulation runs, a Coach panel
-appears (a right-hand column on desktop, a tap-up **bottom-sheet** on mobile). Its suggested
-questions are generated from *your* result — e.g. *"What just happened to my money?"* after a
-margin call, *"Why did everything drop in 2008?"*, *"What would 1x have looked like?"* — and
-its answers interpolate your actual numbers (including a computed 1x-vs-leverage comparison).
+appears (a right-hand column on desktop, a tap-up **bottom-sheet** on mobile) and **narrates
+your result in its own voice** — a reaction with your numbers, the worst-year story, a
+shield-styled margin-call card, a diversification note — as streamed messages. The insights
+that used to be static cards now all come from this one voice. (First run of a session gets
+the full streamed experience; repeat runs are snappy and condensed.) Its follow-up questions
+are generated from *your* result — *"What just happened to my money?"*, *"Why did everything
+drop in 2008?"*, *"What would 1x have looked like?"* — and answers interpolate your actual
+numbers (including a computed 1x-vs-leverage comparison).
 
 **The guardrail is still the heart of the demo.** Ask for *personal advice* ("what should I
 buy", "which asset is best", "should I add leverage") and the Coach **does not answer** — it

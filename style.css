@@ -967,6 +967,28 @@ body {
 }
 .coach-fab[hidden] { display: none; }
 .coach-fab:active { transform: scale(0.97); }
+/* Pulse + "new" badge when fresh narration landed while the sheet was closed */
+.coach-fab.pulse { animation: fabPulse 1.4s ease-in-out infinite; }
+@keyframes fabPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 0, 131, 0.45), var(--shadow); }
+  50% { box-shadow: 0 0 0 10px rgba(255, 0, 131, 0), var(--shadow); }
+}
+.coach-fab.pulse::after {
+  content: "";
+  position: absolute;
+  top: -3px; right: -3px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--color-warning);
+  border: 2px solid #fff;
+}
+
+/* Snappy-mode / card messages appear with a brief fade-in (no word-by-word) */
+.msg-row.instant { animation: coachFadeIn 0.25s ease; }
+@keyframes coachFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
 
 .coach-backdrop {
   position: fixed; inset: 0;
