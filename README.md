@@ -1,6 +1,6 @@
-# P2Pi Coach — a classroom GenAI investing demo
+# P2π Coach — a classroom GenAI investing demo
 
-A polished, front-end-only prototype of **P2Pi Coach**: a friendly GenAI coach that
+A polished, front-end-only prototype of **P2π Coach**: a friendly GenAI coach that
 teaches young students how investing works. Built for a **financial-literacy classroom**,
 it demonstrates one product principle above all else — **the coach educates, but never
 tells you what to buy.**
@@ -12,12 +12,12 @@ tells you what to buy.**
 
 ---
 
-## What P2Pi is
+## What P2π is
 
-P2Pi is a community investment app for Gen Z — the tagline is *"Invest, share, grow."*
+P2π is a community investment app for Gen Z — the tagline is *"Invest, share, grow."*
 The core insight: the biggest barrier for first-time investors isn't a lack of money —
 it's **fear**. Young people hold cash on the sidelines because they don't understand what
-happens to their money and are afraid of doing something wrong. P2Pi removes the fear by
+happens to their money and are afraid of doing something wrong. P2π removes the fear by
 **building understanding first**, in plain, jargon-free language.
 
 ## The three tabs

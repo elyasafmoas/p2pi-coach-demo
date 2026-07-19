@@ -587,27 +587,73 @@ tabButtons.forEach((btn) => {
   });
 });
 
-// "How this works" modal.
-const overlay = document.getElementById("modal-overlay");
-document.getElementById("how-link").addEventListener("click", () => (overlay.hidden = false));
-document.getElementById("modal-close").addEventListener("click", () => (overlay.hidden = true));
-overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.hidden = true; });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") { overlay.hidden = true; closeCoachSheet(); } });
-
-// "Reset demo" link inside the modal — clean slate for the next student.
-const resetLink = document.getElementById("reset-link");
-if (resetLink) {
-  resetLink.addEventListener("click", () => {
-    P2Pi.reset();                 // wipe coins + all progress flags
-    window.P2PICoach.reset();     // clear the coach conversation + context
-    const results = document.getElementById("sim-results");
-    if (results) results.hidden = true;
-    if (coachHint) coachHint.hidden = false;
-    if (coachFab) coachFab.hidden = true;
-    closeCoachSheet();
-    overlay.hidden = true;
-    if (window.P2PILearn) window.P2PILearn.refresh();       // reset course cards
-    const learnTab = document.querySelector('.tab[data-tab="learn"]');
-    if (learnTab) learnTab.click();
+/* ------------------------------------------------------------
+   Settings menu (gear) → "How this works" + "Start over"
+   ------------------------------------------------------------ */
+const settingsBtn = document.getElementById("settings-btn");
+const settingsMenu = document.getElementById("settings-menu");
+function openSettings() {
+  settingsMenu.hidden = false;
+  settingsBtn.setAttribute("aria-expanded", "true");
+}
+function closeSettings() {
+  settingsMenu.hidden = true;
+  settingsBtn.setAttribute("aria-expanded", "false");
+}
+if (settingsBtn) {
+  settingsBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    settingsMenu.hidden ? openSettings() : closeSettings();
+  });
+  // Click anywhere outside the menu closes it.
+  document.addEventListener("click", (e) => {
+    if (!settingsMenu.hidden && !e.target.closest(".settings-wrap")) closeSettings();
   });
 }
+
+// "How this works" modal (now opened from the Settings menu).
+const overlay = document.getElementById("modal-overlay");
+document.getElementById("how-link").addEventListener("click", () => {
+  closeSettings();
+  overlay.hidden = false;
+});
+document.getElementById("modal-close").addEventListener("click", () => (overlay.hidden = true));
+overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.hidden = true; });
+
+// "Start over" → confirmation dialog → wipe everything → reload.
+const confirmOverlay = document.getElementById("confirm-overlay");
+const confirmCancel = document.getElementById("confirm-cancel");
+const confirmYes = document.getElementById("confirm-yes");
+function closeConfirm() { confirmOverlay.hidden = true; }
+
+const startOverBtn = document.getElementById("start-over-btn");
+if (startOverBtn) {
+  startOverBtn.addEventListener("click", () => {
+    closeSettings();
+    confirmOverlay.hidden = false;
+    if (confirmCancel) confirmCancel.focus(); // Cancel is the safe default
+  });
+}
+if (confirmCancel) confirmCancel.addEventListener("click", closeConfirm);
+if (confirmOverlay) confirmOverlay.addEventListener("click", (e) => { if (e.target === confirmOverlay) closeConfirm(); });
+if (confirmYes) {
+  confirmYes.addEventListener("click", () => {
+    // Wipe ALL P2π app state (coins, course progress, first-visit + any flags),
+    // then reload so the user lands as a brand-new visitor.
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.toLowerCase().startsWith("p2pi"))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch (e) { /* storage may be blocked; reload still gives a clean session */ }
+    location.reload();
+  });
+}
+
+// Escape closes any open overlay/menu (Escape on the confirm = Cancel, the safe action).
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  overlay.hidden = true;
+  closeConfirm();
+  closeSettings();
+  closeCoachSheet();
+});

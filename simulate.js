@@ -726,7 +726,7 @@ function showCoinToast(n, isBonus) {
   if (!toast || n <= 0) return;
   toast.textContent = isBonus
     ? `🪙 +${n} coins! (first-leverage bonus)`
-    : `🪙 +${n} P2Pi coin${n === 1 ? "" : "s"}!`;
+    : `🪙 +${n} P2π coin${n === 1 ? "" : "s"}!`;
   toast.hidden = false;
   toast.classList.add("show");
   if (toastTimer) clearTimeout(toastTimer);

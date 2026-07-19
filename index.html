@@ -3,24 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>P2Pi Coach — Learn to Invest (Demo)</title>
-  <meta name="description" content="P2Pi Coach — a friendly GenAI coach that teaches young students how investing works, and never tells them what to buy." />
+  <title>P2π Coach — Learn to Invest (Demo)</title>
+  <meta name="description" content="P2π Coach — a friendly GenAI coach that teaches young students how investing works, and never tells them what to buy." />
   <!-- ?v= is a cache-buster: bump it on every deploy so browsers never mix a
        new index.html with a stale cached script/style from a previous deploy
        (the root cause of the empty-asset-picker bug). -->
-  <link rel="stylesheet" href="style.css?v=stage33" />
+  <link rel="stylesheet" href="style.css?v=stage41" />
 </head>
 <body>
   <!-- ============ HEADER ============ -->
   <header class="app-header">
     <div class="brand">
-      <div class="logo">P2P<span class="pi">π</span></div>
+      <div class="logo">P2<span class="pi">π</span></div>
       <span class="tagline">Invest, share, grow.</span>
     </div>
     <div class="header-right">
-      <span class="coin-counter" id="coin-counter" title="Your P2Pi coins">🪙 <b id="coin-count">0</b></span>
+      <span class="coin-counter" id="coin-counter" title="Your P2π coins">🪙 <b id="coin-count">0</b></span>
       <span class="demo-badge">DEMO</span>
-      <button id="how-link" class="how-link" type="button">How this works</button>
+      <div class="settings-wrap">
+        <button id="settings-btn" class="settings-btn" type="button" aria-label="Settings"
+          aria-haspopup="true" aria-expanded="false">⚙</button>
+        <div class="settings-menu" id="settings-menu" role="menu" hidden>
+          <button class="settings-item" id="how-link" type="button" role="menuitem">How this works</button>
+          <button class="settings-item danger" id="start-over-btn" type="button" role="menuitem">Start over</button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -168,7 +175,7 @@
         <div class="coins-hero" id="coins-hero">
           <div class="coins-emoji">🪙</div>
           <div class="coins-balance" id="coins-balance">0</div>
-          <div class="coins-caption">P2Pi coins earned</div>
+          <div class="coins-caption">P2π coins earned</div>
         </div>
 
         <!-- Earning rules recap -->
@@ -188,7 +195,7 @@
           <ul class="locked-list">
             <li>🔒 Unlock advanced lessons</li>
             <li>🔒 Join a study circle with classmates</li>
-            <li>🔒 Earn your "P2Pi Graduate" badge</li>
+            <li>🔒 Earn your "P2π Graduate" badge</li>
           </ul>
         </div>
 
@@ -218,7 +225,19 @@
         Our golden rule: <strong>the Coach explains how things work and what your result did,
         but never tells you what to do with your money.</strong> That choice always stays with you.
       </p>
-      <button class="reset-link" id="reset-link" type="button">↺ Reset demo (clear coins &amp; progress)</button>
+    </div>
+  </div>
+
+  <!-- "Start over" confirmation (Cancel is the safe default) -->
+  <div class="modal-overlay" id="confirm-overlay" hidden>
+    <div class="modal confirm-modal" role="alertdialog" aria-modal="true"
+         aria-labelledby="confirm-title" aria-describedby="confirm-desc">
+      <h2 id="confirm-title">Start over?</h2>
+      <p id="confirm-desc">This erases your coins and all course progress. This can't be undone.</p>
+      <div class="confirm-actions">
+        <button class="btn-cancel" id="confirm-cancel" type="button">Cancel</button>
+        <button class="btn-danger" id="confirm-yes" type="button">Yes, start fresh</button>
+      </div>
     </div>
   </div>
 
@@ -227,16 +246,16 @@
 
   <!-- Asset modules self-register into window.P2PI_ASSETS (order = display order).
        ?v= cache-buster is bumped on every deploy — see the note in <head>. -->
-  <script src="data/sp500.js?v=stage33"></script>
-  <script src="data/nasdaq.js?v=stage33"></script>
-  <script src="data/dow.js?v=stage33"></script>
-  <script src="data/ta35.js?v=stage33"></script>
-  <script src="data/agg.js?v=stage33"></script>
-  <script src="data/courses.js?v=stage33"></script>
-  <script src="store.js?v=stage33"></script>
-  <script src="app.js?v=stage33"></script>
-  <script src="simulate.js?v=stage33"></script>
-  <script src="coins.js?v=stage33"></script>
-  <script src="learn.js?v=stage33"></script>
+  <script src="data/sp500.js?v=stage41"></script>
+  <script src="data/nasdaq.js?v=stage41"></script>
+  <script src="data/dow.js?v=stage41"></script>
+  <script src="data/ta35.js?v=stage41"></script>
+  <script src="data/agg.js?v=stage41"></script>
+  <script src="data/courses.js?v=stage41"></script>
+  <script src="store.js?v=stage41"></script>
+  <script src="app.js?v=stage41"></script>
+  <script src="simulate.js?v=stage41"></script>
+  <script src="coins.js?v=stage41"></script>
+  <script src="learn.js?v=stage41"></script>
 </body>
 </html>
