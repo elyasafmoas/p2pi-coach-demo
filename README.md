@@ -39,10 +39,16 @@ to explain the underlying concept instead. The AI explains *how leverage works*,
 *how much leverage to use with your money*.
 
 ### 📈 Simulate — a historical time machine
-Pick an **index** (S&P 500, NASDAQ, Dow Jones, or Israel's TA-35), an **amount**
-(₪100–₪10,000), a **starting year** (the slider adapts to each index's earliest reliable
-data — e.g. TA-35 starts in 2000), and a **leverage** level (1x–5x), then hit *"Show me
-what would've happened."* The app replays that index's real history and shows:
+Pick **one or more indexes** (S&P 500, NASDAQ, Dow Jones, or Israel's TA-35), an **amount**
+(₪100–₪10,000), a **starting year** (the slider adapts to the earliest reliable data of your
+picks — e.g. TA-35 starts in 2000), and a **leverage** level (1x–5x), then hit *"Show me
+what would've happened."*
+
+**Portfolio splitting:** tap multiple indexes to build a portfolio (1–4). An allocation
+panel appears with a slider per index (always summing to 100%, with a live donut chart) and
+quick presets (Equal split / Mostly safe / Adventurous). Results show one bold total line
+plus tappable per-index lines, a per-asset breakdown table, and a **diversification
+callout** when splitting softened the worst year. The app replays real history and shows:
 - an animated count-up to today's value, with profit/loss in ₪ and %,
 - a hand-rolled SVG line chart of the journey (no chart library),
 - honest storytelling about the **worst dip** along the way, always in shekels, and

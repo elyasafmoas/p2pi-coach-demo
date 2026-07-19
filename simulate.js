@@ -42,51 +42,69 @@ function prettyMonth(ym) {
 }
 
 /* ------------------------------------------------------------
-   The core simulation for ONE asset. Returns the month-by-month
-   equity journey plus the summary numbers the UI needs.
+   The core simulation for a PORTFOLIO of one or more assets.
 
-   Structured for the next stage (splitting across assets): a split
-   simulation would call this per asset leg with each leg's share of
-   the amount, then combine the per-month equities. Keeping this a
-   pure function of (amount, year, leverage, asset) makes that clean.
+   allocations: [{ asset, weight }] with weights summing to 1.
+   - Each asset is a "leg": your money × weight, invested at the shared
+     leverage. Legs move with their own index each month.
+   - The borrowed money accrues financing per leg.
+   - Total equity = sum of leg equities; total position = sum of leg
+     positions. The MARGIN CALL is judged on the TOTAL — so a diversified
+     mix can survive a dip that would have wiped out a single asset.
+
+   Because total = Σ legs at every step, "total = sum of the parts" holds
+   exactly, which is what the per-asset breakdown table relies on.
    ------------------------------------------------------------ */
-function runSimulationMath(amount, startYear, leverage, asset) {
-  const data = asset.monthlyData;
-  const startPoint = data.find((p) => p.date === startYear + "-01") || data[0];
-  const slice = data.slice(data.indexOf(startPoint));
+function runPortfolioSimulation(amount, startYear, leverage, allocations) {
+  const L = leverage;
+  const legs = allocations.map(({ asset, weight }) => {
+    const data = asset.monthlyData;
+    const startPoint = data.find((p) => p.date === startYear + "-01") || data[0];
+    const slice = data.slice(data.indexOf(startPoint));
+    const allocated = amount * weight;
+    return {
+      asset, weight, allocated, slice,
+      position: allocated * L,       // market value this leg controls
+      debt: allocated * (L - 1),     // this leg's share of the loan
+      equity: [allocated],           // per-month equity for this leg
+    };
+  });
 
-  let position = amount * leverage;        // current market value we control
-  let debt = amount * (leverage - 1);      // what we owe the lender
-
-  const points = [{ date: slice[0].date, equity: amount }];
+  // All legs share the same timeline; length = shortest available slice.
+  const n = Math.min(...legs.map((l) => l.slice.length));
+  const points = [{ date: legs[0].slice[0].date, equity: amount }];
   let marginCall = null;
-
-  // Track the biggest peak-to-trough drop in YOUR money (in shekels).
   let peak = amount, worstDrop = 0, worstIndex = 0, worstYear = startYear;
 
-  for (let i = 1; i < slice.length; i++) {
-    const monthReturn = slice[i].value / slice[i - 1].value - 1;
-    position *= 1 + monthReturn;
-    if (leverage > 1) debt *= 1 + FINANCING_ANNUAL / 12; // financing accrues
+  for (let i = 1; i < n; i++) {
+    let totalPos = 0, totalDebt = 0;
+    legs.forEach((l) => {
+      const r = l.slice[i].value / l.slice[i - 1].value - 1;
+      l.position *= 1 + r;
+      if (L > 1) l.debt *= 1 + FINANCING_ANNUAL / 12;
+      totalPos += l.position;
+      totalDebt += l.debt;
+    });
+    let totalEquity = totalPos - totalDebt;
 
-    let equity = position - debt;
-
-    // Margin call: equity has become too thin a slice of the position.
-    if (leverage > 1 && position > 0 && equity / position < MAINTENANCE_MARGIN) {
-      equity = Math.max(0, equity);
-      points.push({ date: slice[i].date, equity });
-      marginCall = { date: slice[i].date, equity };
+    // Margin call on the whole portfolio's equity.
+    if (L > 1 && totalPos > 0 && totalEquity / totalPos < MAINTENANCE_MARGIN) {
+      totalEquity = Math.max(0, totalEquity);
+      legs.forEach((l) => l.equity.push(Math.max(0, l.position - l.debt)));
+      points.push({ date: legs[0].slice[i].date, equity: totalEquity });
+      marginCall = { date: legs[0].slice[i].date, equity: totalEquity };
       break;
     }
 
-    points.push({ date: slice[i].date, equity });
+    legs.forEach((l) => l.equity.push(l.position - l.debt));
+    points.push({ date: legs[0].slice[i].date, equity: totalEquity });
 
-    if (equity > peak) peak = equity;
-    const drop = peak - equity;
+    if (totalEquity > peak) peak = totalEquity;
+    const drop = peak - totalEquity;
     if (drop > worstDrop) {
       worstDrop = drop;
       worstIndex = i;
-      worstYear = slice[i].date.slice(0, 4);
+      worstYear = points[i].date.slice(0, 4);
     }
   }
 
@@ -96,13 +114,27 @@ function runSimulationMath(amount, startYear, leverage, asset) {
     amount,
     startYear,
     leverage,
-    asset,
+    allocations,
+    legs: legs.map((l) => {
+      const fin = l.equity[l.equity.length - 1];
+      return {
+        asset: l.asset, weight: l.weight, allocated: l.allocated,
+        equity: l.equity, final: fin, profit: fin - l.allocated,
+        pct: (fin / l.allocated - 1) * 100,
+      };
+    }),
     finalValue,
     profit: finalValue - amount,
     pct: (finalValue / amount - 1) * 100,
     marginCall,
     worst: { drop: worstDrop, index: worstIndex, year: worstYear },
   };
+}
+
+// Convenience wrapper: simulate a single asset (used for the standalone
+// "worst year" comparison behind the diversification callout).
+function runSimulationMath(amount, startYear, leverage, asset) {
+  return runPortfolioSimulation(amount, startYear, leverage, [{ asset, weight: 1 }]);
 }
 
 /* ------------------------------------------------------------
@@ -116,30 +148,40 @@ function cssVar(name) {
 }
 
 function buildChart(result) {
-  const { points, amount, worst, asset } = result;
-  // The line takes the asset's own colour so each index reads distinctly.
-  const C_PRIMARY = (asset && asset.color) || cssVar("--color-primary") || "#FF0083";
+  const { points, amount, worst, legs } = result;
+  const multi = legs.length > 1;
+  // Total line is always the bold brand magenta.
+  const C_TOTAL = cssVar("--color-primary") || "#FF0083";
   const C_WARNING = cssVar("--color-warning") || "#E5484D";
   const C_MUTED = cssVar("--color-text-muted") || "#6B6B6B";
   const W = 340, H = 160, padX = 8, padTop = 14, padBot = 22;
-  const eqs = points.map((p) => p.equity);
-  const min = Math.min(...eqs, amount);
-  const max = Math.max(...eqs, amount);
+
+  // Scale to fit the total AND every per-asset leg (so toggled lines fit).
+  let allVals = points.map((p) => p.equity).concat([amount]);
+  legs.forEach((l) => { allVals = allVals.concat(l.equity.slice(0, points.length)); });
+  const min = Math.min(...allVals);
+  const max = Math.max(...allVals);
   const range = max - min || 1;
 
   const x = (i) => padX + (i * (W - 2 * padX)) / Math.max(1, points.length - 1);
   const y = (v) => padTop + (H - padTop - padBot) * (1 - (v - min) / range);
+  const toLine = (arr) => arr.slice(0, points.length).map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
 
-  const linePts = points.map((p, i) => `${x(i).toFixed(1)},${y(p.equity).toFixed(1)}`);
+  const totalPts = points.map((p) => p.equity);
   const areaPath =
     `M ${x(0).toFixed(1)},${(H - padBot).toFixed(1)} ` +
-    `L ${linePts.join(" L ")} ` +
+    `L ${toLine(totalPts).split(" ").join(" L ")} ` +
     `L ${x(points.length - 1).toFixed(1)},${(H - padBot).toFixed(1)} Z`;
 
-  const baseY = y(amount).toFixed(1); // "you put in" reference line
+  const baseY = y(amount).toFixed(1);
   const endX = x(points.length - 1), endY = y(points[points.length - 1].equity);
 
-  // Worst-dip marker (only if there was a meaningful dip).
+  // Per-asset lines (thin, in each asset's colour), hidden until toggled.
+  const legLines = multi ? legs.map((l) =>
+    `<polyline class="leg-line" data-leg="${l.asset.id}" points="${toLine(l.equity)}"
+       fill="none" stroke="${l.asset.color}" stroke-width="1.4"
+       stroke-linejoin="round" stroke-linecap="round" style="display:none"/>`).join("") : "";
+
   let worstMarker = "";
   if (worst.drop > 0 && worst.index > 0) {
     const wx = x(worst.index), wy = y(points[worst.index].equity);
@@ -156,11 +198,11 @@ function buildChart(result) {
 
   return `
     <svg viewBox="0 0 ${W} ${H}" class="sim-chart" role="img"
-         aria-label="Line chart of your investment value over time">
+         aria-label="Line chart of your portfolio value over time">
       <defs>
         <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${C_PRIMARY}" stop-opacity="0.22"/>
-          <stop offset="100%" stop-color="${C_PRIMARY}" stop-opacity="0"/>
+          <stop offset="0%" stop-color="${C_TOTAL}" stop-opacity="0.20"/>
+          <stop offset="100%" stop-color="${C_TOTAL}" stop-opacity="0"/>
         </linearGradient>
       </defs>
       <path d="${areaPath}" fill="url(#fillGrad)"/>
@@ -169,16 +211,35 @@ function buildChart(result) {
             stroke-dasharray="3 3" opacity="0.6"/>
       <text x="${padX}" y="${(+baseY - 4).toFixed(1)}" fill="${C_MUTED}"
             font-size="8">you put in ${shekels(amount)}</text>
-      <polyline points="${linePts.join(" ")}" fill="none"
-                stroke="${C_PRIMARY}" stroke-width="2.5"
+      ${legLines}
+      <polyline points="${toLine(totalPts)}" fill="none"
+                stroke="${C_TOTAL}" stroke-width="2.8"
                 stroke-linejoin="round" stroke-linecap="round"/>
-      <circle cx="${endX.toFixed(1)}" cy="${endY.toFixed(1)}" r="3.5"
-              fill="${C_PRIMARY}"/>
+      <circle cx="${endX.toFixed(1)}" cy="${endY.toFixed(1)}" r="3.5" fill="${C_TOTAL}"/>
       ${worstMarker}
       <text x="${padX}" y="${H - 6}" fill="${C_MUTED}" font-size="9">${startYr}</text>
       <text x="${W - padX}" y="${H - 6}" text-anchor="end"
             fill="${C_MUTED}" font-size="9">${endYr}</text>
     </svg>`;
+}
+
+/* Small donut chart of the allocation, one arc per asset in its colour. */
+function buildDonut(entries) {
+  // entries: [{ color, pct }] pct in 0..100
+  const size = 96, r = 38, cx = size / 2, cy = size / 2;
+  const C = 2 * Math.PI * r;
+  let offset = 0;
+  const rings = entries.map((e) => {
+    const len = (e.pct / 100) * C;
+    const seg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
+        stroke="${e.color}" stroke-width="14"
+        stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}"
+        stroke-dashoffset="${(-offset).toFixed(2)}"
+        transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset += len;
+    return seg;
+  }).join("");
+  return `<svg viewBox="0 0 ${size} ${size}" class="donut" aria-hidden="true">${rings}</svg>`;
 }
 
 /* ------------------------------------------------------------
@@ -239,11 +300,26 @@ function countUp(el, target) {
     ASSETS.map((a) => a.id).join(", ") || "(none)"
   );
 
-  // In this stage the student picks ONE asset. (Next stage: an array of
-  // {asset, weight} allocations — the picker + run loop would iterate that.)
-  let selectedAsset = ASSETS[0] || null;
+  // --- Portfolio state: which assets are in, and their % weights ---
+  const alloc = document.getElementById("alloc-panel");
+  const allocSliders = document.getElementById("alloc-sliders");
+  const donutWrap = document.getElementById("donut-wrap");
+  const chartWrap = document.getElementById("chart-wrap");
+  const chartLegend = document.getElementById("chart-legend");
 
-  // Build the horizontal asset cards (or a visible error card if none loaded).
+  let selected = ASSETS.length ? [ASSETS[0]] : []; // start with one index
+  let weights = equalWeightsFor(selected.length); // percentages, sum 100
+
+  // Even split that always sums to exactly 100 (remainder spread to the first).
+  function equalWeightsFor(k) {
+    if (k === 0) return [];
+    const base = Math.floor(100 / k);
+    const w = Array(k).fill(base);
+    for (let i = 0; i < 100 - base * k; i++) w[i]++;
+    return w;
+  }
+
+  // Build the asset cards (multi-select). A red card if none loaded.
   function renderPicker() {
     picker.innerHTML = "";
     if (ASSETS.length === 0) {
@@ -253,32 +329,130 @@ function countUp(el, target) {
       return;
     }
     ASSETS.forEach((asset) => {
+      const on = selected.includes(asset);
       const card = document.createElement("button");
       card.type = "button";
-      card.className = "asset-card" + (asset === selectedAsset ? " selected" : "");
-      card.setAttribute("role", "radio");
-      card.setAttribute("aria-checked", asset === selectedAsset ? "true" : "false");
+      card.className = "asset-card" + (on ? " selected" : "");
+      card.setAttribute("role", "checkbox");
+      card.setAttribute("aria-checked", on ? "true" : "false");
       card.innerHTML =
-        `<span class="asset-name"><span class="asset-dot" style="background:${asset.color}"></span>${asset.shortName}</span>` +
+        `<span class="asset-name"><span class="asset-dot" style="background:${asset.color}"></span>${asset.shortName}${on ? " ✓" : ""}</span>` +
         `<span class="asset-desc">${asset.description}</span>`;
-      card.addEventListener("click", () => selectAsset(asset));
+      card.addEventListener("click", () => toggleAsset(asset));
       picker.appendChild(card);
     });
   }
 
-  function selectAsset(asset) {
-    selectedAsset = asset;
+  // Toggle an asset in/out of the portfolio (keep 1–4). Resets to equal split.
+  function toggleAsset(asset) {
+    const at = selected.indexOf(asset);
+    if (at >= 0) {
+      if (selected.length === 1) return; // keep at least one
+      selected.splice(at, 1);
+    } else {
+      if (selected.length >= 4) return; // cap at four
+      selected.push(asset);
+    }
+    weights = equalWeightsFor(selected.length);
     renderPicker();
+    renderAllocPanel();
     adaptYearRange();
   }
 
-  // Clamp the year slider's minimum to the asset's earliest reliable year.
+  // Show/build the allocation panel when 2+ assets are selected.
+  function renderAllocPanel() {
+    if (selected.length < 2) { alloc.hidden = true; return; }
+    alloc.hidden = false;
+    allocSliders.innerHTML = selected.map((a, i) =>
+      `<div class="alloc-row">
+         <span class="alloc-dot" style="background:${a.color}"></span>
+         <span class="alloc-name">${a.shortName}</span>
+         <input type="range" class="alloc-slider" min="0" max="100" step="1" value="${weights[i]}" data-i="${i}"
+                aria-label="${a.shortName} percentage" />
+         <span class="alloc-pct" data-i="${i}">${weights[i]}%</span>
+       </div>`).join("");
+    allocSliders.querySelectorAll(".alloc-slider").forEach((s) => {
+      s.addEventListener("input", () => {
+        rebalance(+s.dataset.i, +s.value);
+        updateAllocUI();
+      });
+    });
+    updateAllocUI();
+  }
+
+  // Proportionally rebalance the OTHER weights so everything still sums to 100.
+  function rebalance(idx, newVal) {
+    newVal = Math.max(0, Math.min(100, Math.round(newVal)));
+    const others = weights.map((_, j) => j).filter((j) => j !== idx);
+    const othersSum = others.reduce((s, j) => s + weights[j], 0);
+    const remaining = 100 - newVal;
+    const nw = weights.slice();
+    nw[idx] = newVal;
+    others.forEach((j) => {
+      nw[j] = othersSum > 0 ? (remaining * weights[j]) / othersSum : remaining / others.length;
+    });
+    others.forEach((j) => (nw[j] = Math.round(nw[j])));
+    // Absorb any rounding drift into the largest "other" so the sum is exactly 100.
+    const drift = 100 - nw.reduce((a, b) => a + b, 0);
+    if (drift !== 0 && others.length) {
+      let big = others[0];
+      others.forEach((j) => { if (nw[j] > nw[big]) big = j; });
+      nw[big] = Math.max(0, nw[big] + drift);
+    }
+    weights = nw;
+  }
+
+  // Push current weights into the sliders, % labels, and the donut.
+  function updateAllocUI() {
+    allocSliders.querySelectorAll(".alloc-slider").forEach((s) => {
+      s.value = weights[+s.dataset.i];
+    });
+    allocSliders.querySelectorAll(".alloc-pct").forEach((el) => {
+      el.textContent = weights[+el.dataset.i] + "%";
+    });
+    donutWrap.innerHTML = buildDonut(selected.map((a, i) => ({ color: a.color, pct: weights[i] })));
+  }
+
+  // Preset chips just set slider values (no math for the student).
+  function setPreset(name) {
+    const k = selected.length;
+    if (name === "equal") {
+      weights = equalWeightsFor(k);
+    } else {
+      // Adventurousness rank: Dow (calmest) → NASDAQ (boldest).
+      const rank = { dow: 1, sp500: 2, ta35: 3, nasdaq: 4 };
+      const raw = selected.map((a) => {
+        const rk = rank[a.id] || 2;
+        return name === "safe" ? 5 - rk : rk; // safe favours calm, adventurous favours bold
+      });
+      const sum = raw.reduce((a, b) => a + b, 0);
+      weights = raw.map((x) => Math.round((100 * x) / sum));
+      const drift = 100 - weights.reduce((a, b) => a + b, 0);
+      if (drift !== 0) {
+        let big = 0;
+        weights.forEach((w, i) => { if (w > weights[big]) big = i; });
+        weights[big] += drift;
+      }
+    }
+    updateAllocUI();
+  }
+  document.querySelectorAll(".preset-chip").forEach((chip) => {
+    chip.addEventListener("click", () => setPreset(chip.dataset.preset));
+  });
+
+  // Clamp the year slider to the LATEST earliest-date among selected assets.
   function adaptYearRange() {
-    if (!selectedAsset) return;
-    const minYear = +selectedAsset.earliestReliableDate.slice(0, 4);
+    if (!selected.length) return;
+    const years = selected.map((a) => +a.earliestReliableDate.slice(0, 4));
+    const minYear = Math.max(...years);
     year.min = minYear;
     if (+year.value < minYear) year.value = minYear;
-    yearNote.textContent = `📅 Data available from ${minYear} for ${selectedAsset.shortName}.`;
+    if (selected.length === 1) {
+      yearNote.textContent = `📅 Data available from ${minYear} for ${selected[0].shortName}.`;
+    } else {
+      const limiter = selected.find((a) => +a.earliestReliableDate.slice(0, 4) === minYear);
+      yearNote.textContent = `📅 Your picks share data from ${minYear} (limited by ${limiter.shortName}).`;
+    }
     refreshLabels();
   }
 
@@ -292,33 +466,30 @@ function countUp(el, target) {
   [amt, year, lev].forEach((s) => s.addEventListener("input", refreshLabels));
 
   renderPicker();
-  adaptYearRange(); // sets note + clamps for the default asset
+  renderAllocPanel();
+  adaptYearRange();
   refreshLabels();
 
   runBtn.addEventListener("click", () => {
-    if (!selectedAsset) return; // nothing to simulate if data failed to load
+    if (!selected.length) return; // nothing to simulate if data failed to load
     const leverage = +lev.value;
-    const result = runSimulationMath(+amt.value, +year.value, leverage, selectedAsset);
+    const allocations = selected.map((a, i) => ({ asset: a, weight: weights[i] / 100 }));
+    const result = runPortfolioSimulation(+amt.value, +year.value, leverage, allocations);
     renderResults(result);
 
     // Reward exploration with coins (shared state; My Coins reads it too).
     P2Pi.addCoins(COINS_PER_RUN);
-    // One-time +5 bonus the first time a student tries leverage above 1x.
     const bonus = leverage > 1 ? P2Pi.awardOnce("leverage_tried", 5) : 0;
     showCoinToast(COINS_PER_RUN + bonus, bonus > 0);
   });
 
   function renderResults(r) {
     results.hidden = false;
+    const multi = r.legs.length > 1;
 
     document.getElementById("r-amount").textContent = shekels(r.amount);
     document.getElementById("r-year").textContent = r.startYear;
-    document.getElementById("r-asset").textContent = r.asset.shortName;
-
-    // Chart legend: colour dot + full asset name.
-    document.getElementById("chart-legend").innerHTML =
-      `<span class="asset-dot" style="background:${r.asset.color}"></span>` +
-      `<span>${r.asset.name}</span>`;
+    document.getElementById("r-asset").textContent = multi ? "your portfolio" : r.legs[0].asset.shortName;
 
     // Profit / loss line, coloured green up / red down.
     const profitEl = document.getElementById("r-profit");
@@ -329,8 +500,12 @@ function countUp(el, target) {
     pctEl.textContent = `(${up ? "+" : "−"}${Math.abs(r.pct).toFixed(1)}%)`;
     pctEl.className = up ? "num-positive" : "num-negative";
 
-    // Chart.
-    document.getElementById("chart-wrap").innerHTML = buildChart(r);
+    // Chart + legend.
+    chartWrap.innerHTML = buildChart(r);
+    renderChartLegend(r, multi);
+
+    // Per-asset breakdown table (only meaningful for a split).
+    renderBreakdown(r, multi);
 
     // Honest "worst dip" storytelling — always in shekels.
     const worstNote = document.getElementById("worst-note");
@@ -343,6 +518,9 @@ function countUp(el, target) {
     } else {
       worstNote.hidden = true;
     }
+
+    // Diversification teaching callout — only when it's actually true.
+    renderDiversifyNote(r, multi);
 
     // Margin-call teaching card (only when leverage wiped out the cushion).
     const marginCard = document.getElementById("margin-card");
@@ -366,6 +544,73 @@ function countUp(el, target) {
     // Animate the headline number last so it's the thing the eye lands on.
     countUp(document.getElementById("r-final"), r.finalValue);
     results.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  // Chart legend: a magenta "Total" swatch, plus a tappable chip per asset
+  // (multi only) that toggles that asset's thin line on the chart.
+  function renderChartLegend(r, multi) {
+    let html = `<span class="legend-item legend-total"><span class="legend-swatch" style="background:var(--color-primary)"></span>Total${multi ? " portfolio" : ""}</span>`;
+    if (multi) {
+      html += r.legs.map((l) =>
+        `<button type="button" class="legend-item leg-toggle" data-leg="${l.asset.id}">
+           <span class="legend-swatch" style="background:${l.asset.color}"></span>${l.asset.shortName}</button>`).join("");
+      html += `<span class="legend-hint">tap to compare</span>`;
+    }
+    chartLegend.innerHTML = html;
+    chartLegend.querySelectorAll(".leg-toggle").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const line = chartWrap.querySelector(`.leg-line[data-leg="${btn.dataset.leg}"]`);
+        if (!line) return;
+        const show = line.style.display === "none";
+        line.style.display = show ? "" : "none";
+        btn.classList.toggle("active", show);
+      });
+    });
+  }
+
+  // Per-asset breakdown table: allocated ₪, final ₪, profit ₪ and %.
+  function renderBreakdown(r, multi) {
+    const bd = document.getElementById("breakdown");
+    if (!multi) { bd.hidden = true; return; }
+    const row = (name, color, allocated, fin, profit, pct, cls) => {
+      const up = profit >= 0;
+      return `<tr class="${cls || ""}">
+        <td><span class="asset-dot" style="background:${color}"></span>${name}</td>
+        <td>${shekels(allocated)}</td>
+        <td>${shekels(fin)}</td>
+        <td class="${up ? "num-positive" : "num-negative"}">${up ? "+" : "−"}${shekels(Math.abs(profit))}<span class="bd-pct">${up ? "+" : "−"}${Math.abs(pct).toFixed(0)}%</span></td>
+      </tr>`;
+    };
+    bd.hidden = false;
+    bd.innerHTML =
+      `<table class="bd-table">
+        <thead><tr><th>Index</th><th>Put in</th><th>Became</th><th>Profit</th></tr></thead>
+        <tbody>
+          ${r.legs.map((l) => row(l.asset.shortName, l.asset.color, l.allocated, l.final, l.profit, l.pct)).join("")}
+          ${row("Total", "var(--color-primary)", r.amount, r.finalValue, r.profit, r.pct, "bd-total")}
+        </tbody>
+      </table>`;
+  }
+
+  // Show the diversification callout ONLY when the split's worst year is
+  // genuinely milder than the worst single asset's worst year (both in ₪).
+  function renderDiversifyNote(r, multi) {
+    const note = document.getElementById("diversify-note");
+    if (!multi) { note.hidden = true; return; }
+    let worstSingle = 0, worstName = "";
+    selected.forEach((a) => {
+      const solo = runSimulationMath(+amt.value, +year.value, +lev.value, a);
+      if (solo.worst.drop > worstSingle) { worstSingle = solo.worst.drop; worstName = a.shortName; }
+    });
+    if (worstSingle > 0 && r.worst.drop < worstSingle) {
+      note.hidden = false;
+      note.innerHTML =
+        `🌱 <strong>Notice:</strong> spreading your money softened the worst year — your mix was ` +
+        `only down <strong>${shekels(r.worst.drop)}</strong>, versus <strong>${shekels(worstSingle)}</strong> ` +
+        `if you'd put it all in ${worstName}. That's <strong>diversification</strong> at work.`;
+    } else {
+      note.hidden = true;
+    }
   }
 })();
 
