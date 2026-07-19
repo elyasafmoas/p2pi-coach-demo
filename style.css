@@ -623,6 +623,110 @@ body {
 .pf-chip.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
 .pf-chart-wrap { margin-bottom: 8px; }
 
+/* --- "Where your money is": donut + holdings --- */
+.pf-section { font-size: 18px; margin: 22px 0 12px; }
+.pf-alloc { display: flex; align-items: center; gap: 16px; }
+.pf-alloc .donut-wrap { flex: 0 0 auto; }
+.pf-alloc .donut { width: 104px; height: 104px; display: block; }
+.pf-holdings { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+
+.pf-holding {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.12s, background 0.12s;
+}
+.pf-holding:hover { border-color: var(--color-primary); }
+.pf-holding.active { border-color: var(--color-primary); background: var(--color-primary-soft); }
+.pf-h-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pf-h-name { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 14px; color: var(--color-text); white-space: nowrap; }
+.pf-h-flow { font-size: 12px; color: var(--color-text-muted); }
+.pf-spark { width: 60px; height: 22px; flex: 0 0 auto; }
+.pf-h-vals { display: flex; flex-direction: column; align-items: flex-end; }
+.pf-h-profit { font-weight: 800; font-size: 14px; }
+.pf-h-pct { font-size: 12px; font-weight: 600; }
+.pf-hint { font-size: 12.5px; color: var(--color-text-muted); margin: 8px 0 4px; text-align: center; }
+
+#pf-insight { margin-top: 12px; }
+
+/* --- Newsletter (demo) --- */
+.pf-news { margin-top: 20px; }
+.pf-news-card {
+  position: relative;
+  background: var(--color-primary-soft);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  overflow: hidden;
+}
+.pf-news-card h3 { margin: 0 0 6px; font-size: 18px; }
+.pf-news-card p { margin: 0 0 14px; font-size: 14.5px; color: var(--color-text); }
+.pf-news-form { display: flex; gap: 8px; }
+.pf-email {
+  flex: 1;
+  min-width: 0;
+  background: var(--color-bg);
+  border: 1.5px solid var(--color-border);
+  border-radius: 999px;
+  padding: 11px 16px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+}
+.pf-email:focus { border-color: var(--color-primary); }
+.pf-subscribe { flex: 0 0 auto; padding: 0 18px; }
+.pf-news-err { margin: 10px 0 0; font-size: 13px; color: var(--color-warning); font-weight: 600; }
+.pf-news-err[hidden] { display: none; }
+.pf-unsub {
+  background: none; border: none;
+  color: var(--color-text-muted);
+  font-size: 12.5px; text-decoration: underline; text-underline-offset: 3px;
+  cursor: pointer; font-family: inherit; margin-top: 6px;
+}
+.pf-unsub:hover { color: var(--color-text); }
+/* Confetti pop on subscribe */
+.pf-confetti { position: absolute; inset: 0; pointer-events: none; }
+.pf-confetti span {
+  position: absolute; top: 8px; font-size: 18px;
+  animation: pfConfetti 1.2s ease-out forwards;
+}
+@keyframes pfConfetti {
+  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(120px) rotate(40deg); opacity: 0; }
+}
+.pf-teaser {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin-top: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 13px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+  font-family: inherit;
+}
+.pf-teaser:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+/* Mobile: donut on top, holdings stacked below (no squish) */
+@media (max-width: 560px) {
+  .pf-alloc { flex-direction: column; align-items: stretch; gap: 12px; }
+  .pf-alloc .donut-wrap { align-self: center; }
+}
+
 /* ---------------- My Coins overlay ---------------- */
 .coins-overlay {
   position: fixed;

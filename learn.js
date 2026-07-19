@@ -249,7 +249,17 @@
   }
 
   // Exposed so "Reset demo" can re-render the course cards after a wipe.
-  window.P2PILearn = { refresh: renderHome };
+  window.P2PILearn = {
+    refresh: renderHome,
+    // Deep-link straight to a specific lesson (used by the portfolio newsletter teaser).
+    openLesson(courseId, idx) {
+      const c = COURSES.find((x) => x.id === courseId);
+      if (!c) return;
+      const learnTab = document.querySelector('.tab[data-tab="learn"]');
+      if (learnTab) learnTab.click();
+      renderLesson(c, idx);
+    },
+  };
 
   renderHome();
 })();
