@@ -479,6 +479,18 @@ body {
   display: inline-block;
 }
 
+/* Visible fallback if zero assets load (e.g. blocked/failed data files) */
+.asset-error {
+  flex: 1;
+  background: #fdecec;
+  border: 2px solid var(--color-warning);
+  color: var(--color-warning);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .year-note { margin: 8px 0 0; font-size: 12.5px; color: var(--color-text-muted); }
 
 /* Chart legend (asset colour + name) */

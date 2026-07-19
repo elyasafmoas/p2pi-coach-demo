@@ -216,14 +216,42 @@ function countUp(el, target) {
   const results = document.getElementById("sim-results");
   if (!amt) return; // Simulate panel not on the page
 
-  const ASSETS = window.P2PI_ASSETS || [];
+  // Validate each registered asset against the expected module shape, so a
+  // single broken data file can't blank out the whole picker.
+  const REQUIRED_FIELDS = ["id", "name", "shortName", "description", "color",
+    "earliestReliableDate", "monthlyData"];
+  function isValidAsset(a) {
+    if (!a || typeof a !== "object") return false;
+    for (const f of REQUIRED_FIELDS) if (a[f] == null) return false;
+    return Array.isArray(a.monthlyData) && a.monthlyData.length > 0;
+  }
+
+  const REGISTERED = window.P2PI_ASSETS || [];
+  const ASSETS = REGISTERED.filter((a) => {
+    const ok = isValidAsset(a);
+    if (!ok) console.warn("[P2Pi] Skipping malformed asset module:", a && a.id, a);
+    return ok;
+  });
+
+  // Self-check on load — makes an empty/partial registry obvious in the console.
+  console.log(
+    `[P2Pi] ${ASSETS.length} of ${REGISTERED.length} asset module(s) loaded:`,
+    ASSETS.map((a) => a.id).join(", ") || "(none)"
+  );
+
   // In this stage the student picks ONE asset. (Next stage: an array of
   // {asset, weight} allocations — the picker + run loop would iterate that.)
-  let selectedAsset = ASSETS[0];
+  let selectedAsset = ASSETS[0] || null;
 
-  // Build the horizontal asset cards.
+  // Build the horizontal asset cards (or a visible error card if none loaded).
   function renderPicker() {
     picker.innerHTML = "";
+    if (ASSETS.length === 0) {
+      picker.innerHTML =
+        `<div class="asset-error">⚠️ Asset data failed to load. Please refresh the page.</div>`;
+      runBtn.disabled = true;
+      return;
+    }
     ASSETS.forEach((asset) => {
       const card = document.createElement("button");
       card.type = "button";
@@ -246,6 +274,7 @@ function countUp(el, target) {
 
   // Clamp the year slider's minimum to the asset's earliest reliable year.
   function adaptYearRange() {
+    if (!selectedAsset) return;
     const minYear = +selectedAsset.earliestReliableDate.slice(0, 4);
     year.min = minYear;
     if (+year.value < minYear) year.value = minYear;
@@ -267,6 +296,7 @@ function countUp(el, target) {
   refreshLabels();
 
   runBtn.addEventListener("click", () => {
+    if (!selectedAsset) return; // nothing to simulate if data failed to load
     const leverage = +lev.value;
     const result = runSimulationMath(+amt.value, +year.value, leverage, selectedAsset);
     renderResults(result);

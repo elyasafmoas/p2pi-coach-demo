@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>P2Pi Coach — Learn to Invest (Demo)</title>
   <meta name="description" content="P2Pi Coach — a friendly GenAI coach that teaches young students how investing works, and never tells them what to buy." />
-  <link rel="stylesheet" href="style.css" />
+  <!-- ?v= is a cache-buster: bump it on every deploy so browsers never mix a
+       new index.html with a stale cached script/style from a previous deploy
+       (the root cause of the empty-asset-picker bug). -->
+  <link rel="stylesheet" href="style.css?v=stage1b" />
 </head>
 <body>
   <!-- ============ HEADER ============ -->
@@ -193,14 +196,15 @@
   <!-- Coin "+N" toast -->
   <div class="toast" id="toast" hidden></div>
 
-  <!-- Asset modules self-register into window.P2PI_ASSETS (order = display order) -->
-  <script src="data/sp500.js"></script>
-  <script src="data/nasdaq.js"></script>
-  <script src="data/dow.js"></script>
-  <script src="data/ta35.js"></script>
-  <script src="store.js"></script>
-  <script src="app.js"></script>
-  <script src="simulate.js"></script>
-  <script src="coins.js"></script>
+  <!-- Asset modules self-register into window.P2PI_ASSETS (order = display order).
+       ?v= cache-buster is bumped on every deploy — see the note in <head>. -->
+  <script src="data/sp500.js?v=stage1b"></script>
+  <script src="data/nasdaq.js?v=stage1b"></script>
+  <script src="data/dow.js?v=stage1b"></script>
+  <script src="data/ta35.js?v=stage1b"></script>
+  <script src="store.js?v=stage1b"></script>
+  <script src="app.js?v=stage1b"></script>
+  <script src="simulate.js?v=stage1b"></script>
+  <script src="coins.js?v=stage1b"></script>
 </body>
 </html>
