@@ -238,5 +238,10 @@
   <script src="simulate.js?v=stage31"></script>
   <script src="coins.js?v=stage31"></script>
   <script src="learn.js?v=stage31"></script>
-</body>
+<script>setTimeout(function(){
+  function playLesson(li){document.querySelector('.lesson-item[data-lesson="'+li+'"]').click();document.getElementById('start-quiz').click();for(var k=0;k<8;k++){if(document.querySelector('.celebrate-wrap'))break;var c=document.querySelector('.quiz-opt[data-i="0"]');if(c)c.click();var n=document.getElementById('quiz-next');if(n)n.click();}}
+  document.querySelector('.course-card[data-course="finance101"]').click();
+  for(var li=0;li<4;li++){playLesson(li);var b=document.getElementById('done-back');if(b)b.click();}
+  document.title="RUN1_COINS="+P2Pi.getCoins();
+},300);</script></body>
 </html>
