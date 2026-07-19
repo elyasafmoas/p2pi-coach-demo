@@ -506,6 +506,28 @@ function countUp(el, target) {
     P2Pi.addCoins(COINS_PER_RUN);
     const bonus = leverage > 1 ? P2Pi.awardOnce("leverage_tried", 5) : 0;
     showCoinToast(COINS_PER_RUN + bonus, bonus > 0);
+
+    // Hand a results-aware context to the Coach (lives in this tab now).
+    const diversificationShown = !document.getElementById("diversify-note").hidden;
+    // 1x counterfactual (same picks/allocation/amount/year) for the Coach's math.
+    let oneX = result;
+    if (leverage !== 1) oneX = runPortfolioSimulation(+amt.value, +year.value, 1, allocations);
+    const context = {
+      assets: selected.map((a, i) => ({ id: a.id, shortName: a.shortName, weight: weights[i] })),
+      amount: +amt.value,
+      startYear: result.points[0].date.slice(0, 4),
+      endYear: result.points[result.points.length - 1].date.slice(0, 4),
+      leverage,
+      finalValue: result.finalValue,
+      totalProfit: result.profit,
+      totalPct: result.pct,
+      worstYear: { year: result.worst.year, drop: result.worst.drop },
+      marginCall: { happened: !!result.marginCall, date: result.marginCall ? result.marginCall.date : null },
+      diversificationShown,
+      oneXFinal: oneX.finalValue,
+      oneXProfit: oneX.profit,
+    };
+    if (window.P2PICoach) window.P2PICoach.onSimulation(context);
   });
 
   /* ------------------------------------------------------------

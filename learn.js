@@ -238,5 +238,8 @@
     }
   }
 
+  // Exposed so "Reset demo" can re-render the course cards after a wipe.
+  window.P2PILearn = { refresh: renderHome };
+
   renderHome();
 })();

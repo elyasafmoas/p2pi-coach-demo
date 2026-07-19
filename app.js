@@ -1,228 +1,313 @@
 /* ============================================================
-   P2Pi Coach — demo logic (no frameworks, no backend)
+   P2Pi Coach — results-aware contextual help (lives in the Simulate tab).
 
-   How it works, top to bottom:
-   1. GUARDRAIL rules  — advice-seeking intent is detected FIRST and
-      hard-blocks a normal answer (the heart of the demo).
-   2. Q&A BANK         — scripted educational answers, matched by keyword.
-   3. Rendering        — bubbles, simulated "thinking", word-by-word stream.
-   4. Chips            — clickable suggested questions that refresh each turn.
+   The Coach appears AFTER a simulation runs. simulate.js builds a
+   SimulationContext each run and calls window.P2PICoach.onSimulation(ctx).
+   The Coach then:
+   - generates suggested chips FROM that context,
+   - answers with the user's ACTUAL numbers (template-aware),
+   - and still hard-blocks advice-seeking with the guardrail card.
 
-   Everything the coach "says" lives in data structures below, so a
-   non-engineer can read and edit the content without touching the plumbing.
+   It also keeps a general educational Q&A bank (the same concepts are
+   taught in the Learn courses) for free-text questions, plus a graceful
+   fallback. Everything the coach "says" lives in data structures below.
    ============================================================ */
 
 /* ------------------------------------------------------------
-   1. THE GUARDRAIL
-   These patterns capture advice-seeking intent ("what should I do
-   with my money"). If any match, we render a guardrail card instead
-   of answering. This runs BEFORE the Q&A match on purpose.
+   1. GUARDRAIL — advice-seeking intent (checked FIRST, blocks answers)
    ------------------------------------------------------------ */
 const ADVICE_PATTERNS = [
   /\bshould i\b/i,
-  /what should i (do|buy|invest|pick|choose)/i,
+  /what should i (do|buy|invest|pick|choose)( next)?/i,
+  /what.* should i (do|buy|pick) next/i,
   /(tell|show) me what to (buy|do|invest|pick)/i,
   /what (do you )?(recommend|suggest)/i,
   /\brecommend\b/i,
+  /which (asset|index|stock|fund|etf|coin|one) (is|would be) (the )?best/i,
+  /what.*(the )?best (asset|index|stock|thing) to (buy|pick)/i,
   /is (it|now|this|that) a good (time|idea) to (invest|buy)/i,
   /is .* a good investment for me/i,
   /how much (leverage|money|risk) should i/i,
   /which (stock|fund|etf|coin|asset) should i/i,
+  /should i (add|use|try|increase|go higher on) .*(leverage|risk)/i,
   /what would you do/i,
   /is .* worth (buying|it)/i,
 ];
 
-// Educational reframe offered inside the guardrail card, keyed loosely by topic.
-function reframeFor(text) {
+// Context-aware reframe shown inside the guardrail card. When we have a
+// result on screen, the offer points back at explaining THIS result.
+function reframeFor(text, ctx) {
   const t = text.toLowerCase();
+  const explainChip = { label: "Explain my result in simple words", intent: "explain" };
   if (t.includes("leverage")) {
     return {
-      body: "I can’t tell you how much leverage to use — that depends on your goals, your timeline, and how much loss you could handle, and only you can weigh that. What I *can* do is show you exactly how leverage changes the math in both directions.",
-      offer: "Want me to explain how leverage magnifies gains AND losses, with a quick example?",
-      chip: "What is leverage?",
+      body: "I can explain what leverage DID to this result — but whether to use it, and how much, is your call, not mine. It depends on your goals, your timeline, and how much loss you could stomach.",
+      offer: "Want me to break down how leverage changed this exact result?",
+      chip: ctx && ctx.leverage > 1 ? { label: "What would 1x have looked like?", intent: "leveragecompare" } : explainChip,
     };
   }
-  if (t.includes("buy") || t.includes("stock") || t.includes("fund") || t.includes("etf")) {
+  if (t.includes("best") || t.includes("pick") || t.includes("buy") || t.includes("choose") || t.includes("which")) {
     return {
-      body: "I can’t tell you what to buy — picking specific investments for someone is personal advice, and that decision stays with you. But I’m happy to explain the building blocks so you can decide with confidence.",
-      offer: "Want me to explain what an index like the S&P 500 actually is?",
-      chip: "What is the S&P 500?",
-    };
-  }
-  if (t.includes("time") || t.includes("now")) {
-    return {
-      body: "I can’t tell you whether now is a good time to invest — timing the market is a personal bet, and I won’t make that call for you. What I can explain is how markets move over time and why time horizon matters more than timing.",
-      offer: "Want me to explain what happens if the market drops right after you invest?",
-      chip: "What happens if the market drops after I invest?",
+      body: "I can’t tell you which to pick — choosing investments for someone is personal advice, and that stays with you. What I can do is explain what each choice does, using your own results.",
+      offer: "Want me to explain your result in plain words instead?",
+      chip: explainChip,
     };
   }
   return {
-    body: "I can teach you how investing works, but I can’t tell you what to do with your money — that’s a personal decision, and it stays with you. Let’s build your understanding instead so the choice is yours to make.",
-    offer: "Want me to walk you through a core concept to get started?",
-    chip: "Where do I even begin?",
+    body: "I can teach you how this all works — but deciding what to do next with your money is yours to make, not mine. Let’s build your understanding so the choice is truly yours.",
+    offer: "Want me to walk through what just happened in your simulation?",
+    chip: explainChip,
   };
 }
 
 /* ------------------------------------------------------------
-   2. THE SCRIPTED Q&A BANK
-   Each entry: keyword matchers, a warm plain-language answer, and a
-   set of follow-up chips to show after it's delivered.
-   Answers are ~60–120 words, jargon-free, each ending with a nudge.
+   2. RESULTS-AWARE ANSWERS — interpolate the user's real numbers.
+   ------------------------------------------------------------ */
+// Brief, real-world one-liners for the big crashes (worst-year question).
+const CRASH_NOTES = {
+  "2000": "the dot-com bubble burst — years of hype around internet companies unwound, and tech-heavy prices slid for over two years.",
+  "2008": "the global financial crisis hit — a housing and banking meltdown spread worldwide and dragged almost every market down together.",
+  "2020": "the COVID-19 pandemic struck — markets plunged in just a few weeks as the world locked down, then recovered surprisingly fast.",
+  "2022": "inflation jumped and interest rates rose sharply — which pushed stocks AND bonds down at the same time, an unusually tough combo.",
+};
+
+const shk = (n) => "₪" + Math.round(n).toLocaleString("en-US");
+function monthLabel(ym) {
+  const names = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"];
+  const [y, m] = ym.split("-");
+  return names[+m - 1] + " " + y;
+}
+function assetList(ctx) {
+  if (ctx.assets.length === 1) return ctx.assets[0].shortName;
+  return ctx.assets.map((a) => `${a.shortName} (${a.weight}%)`).join(" + ");
+}
+
+function ctxExplain(ctx) {
+  const grew = ctx.totalProfit >= 0;
+  let msg =
+    `Here’s the plain-words version: you put in ${shk(ctx.amount)} across ${assetList(ctx)}, ` +
+    `and over ${ctx.startYear}–${ctx.endYear} at ${ctx.leverage}x it ${grew ? "grew to" : "shrank to"} ` +
+    `about ${shk(ctx.finalValue)} — a ${grew ? "gain" : "loss"} of roughly ${shk(Math.abs(ctx.totalProfit))} ` +
+    `(${grew ? "+" : "−"}${Math.abs(ctx.totalPct).toFixed(0)}%).`;
+  if (ctx.marginCall.happened) {
+    msg += ` It didn’t run the full stretch, though — a margin call in ${monthLabel(ctx.marginCall.date)} closed your leveraged position early.`;
+  } else if (ctx.worstYear.drop > 0) {
+    msg += ` The scariest moment was around ${ctx.worstYear.year}, when you were down about ${shk(ctx.worstYear.drop)} from your high — and it recovered from there.`;
+  }
+  return msg;
+}
+
+function ctxWorstYear(ctx) {
+  const note = CRASH_NOTES[ctx.worstYear.year] ||
+    "markets simply hit a rough patch — dips like this happen periodically, and historically they’ve recovered given time.";
+  return (
+    `In ${ctx.worstYear.year}, your portfolio was down about ${shk(ctx.worstYear.drop)} from its high point. ` +
+    `In the real world, ${note} The important part: a dip on paper only becomes a real loss if you sell — ` +
+    `staying invested is what lets a recovery reach you.`
+  );
+}
+
+function ctxMarginCall(ctx) {
+  return (
+    `Your ${ctx.leverage}x leverage meant you were investing with borrowed money, so when the market fell around ` +
+    `${monthLabel(ctx.marginCall.date)}, your losses grew about ${ctx.leverage}× as fast. Your own cushion got too thin, ` +
+    `so the lender automatically sold your position to protect their loan — that’s a margin call. You walked away with ` +
+    `roughly ${shk(ctx.finalValue)}. Here’s the kicker: without leverage (1x), the same ${shk(ctx.amount)} would’ve ended ` +
+    `around ${shk(ctx.oneXFinal)} — because it would’ve stayed invested and ridden the recovery back up.`
+  );
+}
+
+function ctxLeverageCompare(ctx) {
+  const diff = ctx.finalValue - ctx.oneXFinal;
+  let msg =
+    `You used ${ctx.leverage}x and ended with about ${shk(ctx.finalValue)}. With plain 1x — just your own ${shk(ctx.amount)}, ` +
+    `no borrowing — the same run would’ve ended around ${shk(ctx.oneXFinal)}.`;
+  if (ctx.marginCall.happened) {
+    msg += ` In this case leverage actually hurt: it triggered a margin call that wiped you out early, while 1x would have survived and kept going.`;
+  } else if (diff >= 0) {
+    msg += ` Here, leverage boosted your result by about ${shk(Math.abs(diff))} — but remember, that same force works in reverse when markets fall.`;
+  } else {
+    msg += ` Here, leverage actually cost you about ${shk(Math.abs(diff))} versus 1x — a reminder that borrowing amplifies losses and carries a financing cost too.`;
+  }
+  return msg + " Same market, very different ride.";
+}
+
+// Diversification what-if for a single-asset result. Returns text + a chip
+// that pre-loads a 50/50 split into the simulator (a nudge, not advice).
+function ctxDiversify(ctx) {
+  const a0 = ctx.assets[0];
+  const partnerId = a0.id === "agg" ? "sp500" : "agg";
+  const partnerName = a0.id === "agg" ? "the S&P 500" : "a steadier Bond ETF";
+  const text =
+    `Right now all your money is in ${a0.shortName}. Splitting it — say half in ${a0.shortName} and half in ${partnerName} — ` +
+    `often smooths the ride: a rough year for one can be softened by the other. It won’t erase risk, but it usually makes the ` +
+    `worst year milder. Want to see it on your own numbers?`;
+  const presetChip = {
+    label: "Try a 50/50 split →",
+    preset: { assets: [a0.id, partnerId], allocation: [50, 50], amount: ctx.amount, startYear: +ctx.startYear, leverage: ctx.leverage },
+  };
+  return { text, presetChip };
+}
+
+// Free-text → context intent (only used when a result is on screen).
+function matchContextIntent(text) {
+  const t = text.toLowerCase();
+  if (/margin call|happened to my money|wiped|lost everything|closed my position|blew up/.test(t)) return "margincall";
+  if (/\b1x\b|without leverage|no leverage|un-?leveraged|compare leverage|what would 1x/.test(t)) return "leveragecompare";
+  if (/why.*(drop|crash|fell|fall|down)|what happened in (19|20)\d\d|worst year|why did everything/.test(t)) return "worstyear";
+  if (/split|diversif|spread it|spread my money/.test(t)) return "diversify";
+  if (/explain|simple words|summar|how did i do|my result|in plain/.test(t)) return "explain";
+  return null;
+}
+function intentApplies(intent, ctx) {
+  if (intent === "explain") return true;
+  if (intent === "worstyear") return ctx.worstYear.drop > 0;
+  if (intent === "margincall") return ctx.marginCall.happened;
+  if (intent === "leveragecompare") return ctx.leverage > 1;
+  if (intent === "diversify") return ctx.assets.length === 1;
+  return false;
+}
+
+/* ------------------------------------------------------------
+   3. GENERAL Q&A BANK — free-text educational answers (also taught in
+   the Learn courses). Kept so no scripted content dies in the move.
    ------------------------------------------------------------ */
 const QA_BANK = [
   {
     id: "begin",
-    keywords: ["begin", "start", "scared", "afraid", "1000", "1,000", "₪1000", "new to", "first time", "where do i"],
+    keywords: ["begin", "scared", "afraid", "new to", "first time", "where do i start"],
     answer:
-      "First — being nervous is completely normal, and honestly it’s a healthy instinct. Almost everyone feels it before their first investment. Here’s the reassuring part: the fear usually comes from not understanding what’s happening to your money, and that’s fixable. Before putting in a single shekel, it’s worth learning just 2–3 basics — what you’re actually buying, what “risk” really means, and how time works in your favor. Understanding comes first; investing comes second. There’s no rush, and learning costs you nothing.",
-    followUp: "Want to start with the very first concept — what “risk” and volatility actually mean?",
-    chips: ["What does volatility mean?", "What is the S&P 500?", "Why invest at all instead of keeping cash?"],
+      "Being nervous is completely normal — almost everyone feels it before their first investment. The fear usually comes from not understanding what’s happening to your money, and that’s fixable. It’s worth learning just 2–3 basics first — what you’re actually buying, what “risk” really means, and how time works in your favor. Understanding comes first; investing comes second. There’s no rush, and learning costs you nothing.",
+    followUp: "Want to start with what “risk” and volatility actually mean?",
+    chips: ["What does volatility mean?", "What is the S&P 500?"],
   },
   {
     id: "leverage",
     keywords: ["leverage", "borrow", "margin", "amplif", "4x", "2x", "multiplier"],
     answer:
-      "Leverage means investing with borrowed money to make your position bigger than your own cash. The catch: it multiplies movement in BOTH directions equally. Quick example — say you put in ₪1,000 at 4x, so you’re controlling ₪4,000. If the market rises 10%, you don’t gain 10% — you gain about 40% (₪400). But if it falls 10%, you lose about 40% (₪400) of your own money, not 10%. Same tool, opposite outcomes. Leverage doesn’t create free upside; it stretches the risk right alongside the reward.",
-    followUp: "Want to see what actually happens to your money when the market drops?",
-    chips: ["What happens if the market drops after I invest?", "What does volatility mean?", "Should I use 4x leverage?"],
+      "Leverage means investing with borrowed money to make your position bigger than your own cash. The catch: it multiplies movement in BOTH directions equally. Put in ₪1,000 at 4x and you’re controlling ₪4,000 — a 10% market rise gives you about +40% (₪400), but a 10% fall costs you about 40% (₪400) of your own money, not 10%. Same tool, opposite outcomes. Leverage doesn’t create free upside; it stretches the risk right alongside the reward.",
+    followUp: "Curious what leverage did to your own result?",
+    chips: ["What would 1x have looked like?", "What does volatility mean?"],
   },
   {
     id: "volatility",
     keywords: ["volatil", "swing", "ups and downs", "fluctuat", "bumpy", "goes up and down"],
     answer:
-      "Volatility is just how much an investment’s price bounces around over time. Low volatility feels like a gentle ±2% wobble — barely noticeable. High volatility might swing ±10% in a week, which can feel thrilling on the way up and stressful on the way down. Here’s the key insight: volatility isn’t the same as losing money. Prices that dip often recover. That’s why time horizon matters so much — over months and years, the daily bumps tend to smooth out, and the short-term drama matters far less than where things trend over the long run.",
-    followUp: "Curious how a long time horizon actually softens those swings in practice?",
-    chips: ["What happens if the market drops after I invest?", "What is the S&P 500?", "Why invest at all instead of keeping cash?"],
+      "Volatility is just how much an investment’s price bounces around over time. Low volatility is a gentle ±2% wobble; high volatility might swing ±10% in a week — thrilling on the way up, stressful on the way down. Key insight: volatility isn’t the same as losing money. Prices that dip often recover. That’s why time horizon matters so much — over months and years, the daily bumps tend to smooth out.",
+    followUp: "Want to see how your own worst year played out?",
+    chips: ["What is the S&P 500?", "What are bonds?"],
   },
   {
     id: "sp500",
     keywords: ["s&p", "sp500", "s and p", "500", "index fund"],
     answer:
-      "The S&P 500 is basically a basket that tracks 500 of the largest companies in the U.S. — names you’d recognize like Apple, Microsoft, and many more. Instead of betting on one company, you’re spread across all of them at once, so if a few stumble, the others help balance it out. That built-in diversification is why so many people treat a broad index like this as a starting point for learning: it’s one simple way to get exposure to “the market overall” rather than trying to pick individual winners.",
-    followUp: "Want to understand what happens to an index like this when the market drops?",
-    chips: ["What happens if the market drops after I invest?", "What fees would I pay?", "What does volatility mean?"],
+      "The S&P 500 is a basket that tracks 500 of the largest U.S. companies — names like Apple and Microsoft. Instead of betting on one company, you’re spread across all of them at once, so if a few stumble, the others help balance it out. That built-in diversification is why so many people treat a broad index like this as a starting point.",
+    followUp: "Want to understand what happens to an index like this in a crash?",
+    chips: ["What does volatility mean?", "What is the NASDAQ?"],
   },
   {
     id: "nasdaq",
     keywords: ["nasdaq", "nas daq", "tech index", "tech-heavy", "composite"],
     answer:
-      "The NASDAQ Composite is another big U.S. index, but it leans heavily toward technology — think companies like Apple, Microsoft, Nvidia, and lots of younger tech names. Because tech tends to grow fast but also swing hard, the NASDAQ usually rises more in good times and falls more in rough ones than a broader index like the S&P 500. That extra bounce is exactly what “higher volatility” feels like. It’s a great example of the trade-off between bigger potential gains and a bumpier ride.",
-    followUp: "Want to see how that bumpier ride looks in the Simulator?",
-    chips: ["What does volatility mean?", "What is the Dow Jones?", "What is the S&P 500?"],
+      "The NASDAQ Composite is another big U.S. index, but it leans heavily toward technology — Apple, Microsoft, Nvidia, and lots of younger tech names. Because tech grows fast but also swings hard, the NASDAQ usually rises more in good times and falls more in rough ones than a broader index like the S&P 500. That extra bounce is exactly what “higher volatility” feels like.",
+    followUp: "Want to see that bumpier ride in the Simulator?",
+    chips: ["What does volatility mean?", "What is the S&P 500?"],
   },
   {
     id: "dow",
     keywords: ["dow jones", "dow", "djia", "industrial average", "30 companies", "blue chip"],
     answer:
-      "The Dow Jones Industrial Average — usually just “the Dow” — tracks 30 large, well-established U.S. companies, the kind you hear about on the news. It’s one of the oldest and most famous market measures, so people often quote it as shorthand for “how the market did today.” Because it’s only 30 big, steady companies, it tends to move a little more calmly than a tech-heavy index like the NASDAQ. It’s a simple window into how big American businesses are doing overall.",
-    followUp: "Curious how the Dow compares to a tech-heavy index like the NASDAQ?",
-    chips: ["What is the NASDAQ?", "What is the S&P 500?", "What does volatility mean?"],
+      "The Dow Jones Industrial Average — “the Dow” — tracks 30 large, well-established U.S. companies, the kind you hear about on the news. It’s one of the oldest, most famous market measures, so people quote it as shorthand for “how the market did today.” With only 30 big, steady companies, it tends to move a little more calmly than a tech-heavy index like the NASDAQ.",
+    followUp: "Curious how the Dow compares to the NASDAQ?",
+    chips: ["What is the NASDAQ?", "What is the S&P 500?"],
   },
   {
     id: "ta35",
     keywords: ["ta-35", "ta35", "ta 35", "ta-25", "tel aviv", "tel-aviv", "israel", "israeli", "maof"],
     answer:
-      "The TA-35 is Israel’s leading stock index — it follows the 35 largest companies traded on the Tel Aviv Stock Exchange, including big Israeli banks and firms you might know locally. Just like the S&P 500 does for the U.S., the TA-35 gives a quick read on how Israel’s biggest companies are doing overall. It’s a popular starting point for people who want exposure to the local market they see around them every day, rather than only investing abroad.",
+      "The TA-35 is Israel’s leading stock index — the 35 largest companies on the Tel Aviv Stock Exchange, including big Israeli banks and firms you might know locally. Just like the S&P 500 does for the U.S., the TA-35 gives a quick read on how Israel’s biggest companies are doing overall. It’s a popular way to get exposure to the local market.",
     followUp: "Want to try investing in the TA-35 in the Simulator?",
-    chips: ["What is the S&P 500?", "What is the NASDAQ?", "What does volatility mean?"],
+    chips: ["What is the S&P 500?", "What does volatility mean?"],
   },
   {
     id: "diversification",
-    keywords: ["diversif", "spread", "spreading", "split", "splitting", "mix", "basket of", "don't put all", "eggs"],
+    keywords: ["diversif", "spread", "spreading", "mix", "basket of", "don't put all", "eggs"],
     answer:
-      "Diversification is a fancy word for a simple idea: don’t put all your money in one place. When you spread it across several different investments, a bad year for one can be softened by a better year for another — so your overall ride is usually smoother. It doesn’t remove risk entirely, and it won’t save you when everything falls at once, but historically a mix tends to have gentler ups and downs than any single bet. It’s one of the most trusted ideas in investing, precisely because it’s about not needing to be right about any one thing.",
-    followUp: "Want to see it in action? Try splitting your money across a few indexes in the Simulate tab and watch how the worst year gets milder.",
-    chips: ["What is the S&P 500?", "What does volatility mean?", "What is the NASDAQ?"],
+      "Diversification is a simple idea: don’t put all your money in one place. Spread it across several investments and a bad year for one can be softened by a better year for another — a smoother overall ride. It doesn’t remove risk, and it won’t save you when everything falls at once, but historically a mix has gentler ups and downs than any single bet.",
+    followUp: "Want to see it on your own numbers? Try splitting your money in the Simulator.",
+    chips: ["What are bonds?", "What does volatility mean?"],
   },
   {
     id: "drop",
-    keywords: ["drop", "crash", "market drops", "goes down", "falls", "lose money", "loss", "lose", "red", "down"],
+    keywords: ["market drops", "goes down", "falls", "lose money", "paper loss", "recover"],
     answer:
-      "Great question, because this is where emotions hit hardest. If the market drops after you invest, you have what’s called a “paper loss” — the number is lower, but you haven’t actually lost anything until you sell. It only becomes a real, locked-in loss the moment you cash out at that lower price. That’s why panic-selling in a dip is so painful: it turns a temporary dip into a permanent loss. Historically, broad markets have recovered given enough time, which is why a longer time horizon and a steady hand tend to matter more than any single scary day.",
-    followUp: "Want to see how volatility and time horizon fit into this picture?",
-    chips: ["What does volatility mean?", "Why invest at all instead of keeping cash?", "How much of my money should be safe vs invested?"],
+      "If the market drops after you invest, you have a “paper loss” — the number is lower, but you haven’t actually lost anything until you sell. It only becomes a real, locked-in loss the moment you cash out at that lower price. That’s why panic-selling in a dip is so painful: it turns a temporary dip into a permanent loss. Historically, broad markets have recovered given enough time.",
+    followUp: "Want to see how your own worst year recovered?",
+    chips: ["What does volatility mean?", "What are bonds?"],
   },
   {
     id: "fees",
-    keywords: ["fee", "cost", "charge", "expense", "spread", "commission", "how much does it cost"],
+    keywords: ["fee", "cost", "charge", "expense", "commission", "how much does it cost"],
     answer:
-      "Fees are the small costs of investing, and they’re worth understanding because they quietly add up over time. Two common ones: a management fee — an annual percentage a fund charges to run itself (often a fraction of a percent for broad index funds, more for actively managed ones) — and the spread, which is the tiny gap between the buy price and the sell price whenever you trade. None of these are dramatic on any single day, but over years even a 1% difference in fees can meaningfully change your end result, so it’s smart to know what you’re paying.",
-    followUp: "Want to understand why investing despite these fees can still beat holding cash?",
-    chips: ["Why invest at all instead of keeping cash?", "What is the S&P 500?", "What does volatility mean?"],
+      "Fees are the small costs of investing, and they quietly add up. A common one is a management fee — a yearly percentage a fund charges to run itself (often a fraction of a percent for broad index funds, more for actively managed ones). None of these are dramatic on any single day, but over years even a 1% difference can meaningfully change your end result, so it’s smart to know what you’re paying.",
+    followUp: "Want to know why investing despite fees still beats holding cash?",
+    chips: ["Why invest instead of keeping cash?", "What is the S&P 500?"],
   },
   {
     id: "cash",
     keywords: ["cash", "inflation", "why invest", "instead of saving", "keep my money", "savings", "why not just save"],
     answer:
-      "It feels safest to keep everything in cash — but there’s a quiet catch called inflation. Inflation is the slow rise in prices over time, which means the same money buys a little less each year. Imagine prices rise about 3% a year: ₪1,000 sitting untouched would buy roughly ₪970 worth of stuff a year later, and less the year after. Your number didn’t change, but its real power shrank. Investing is one way people try to grow their money faster than inflation erodes it. Cash still has an important role — it’s just not built for long-term growth.",
-    followUp: "Curious how people decide how much to keep in safe cash versus invested?",
-    chips: ["How much of my money should be safe vs invested?", "What is the S&P 500?", "What does volatility mean?"],
+      "Keeping everything in cash feels safest — but there’s a quiet catch called inflation, the slow rise in prices that means the same money buys a little less each year. If prices rise about 3% a year, ₪1,000 buys roughly ₪970 worth of stuff a year later. Your number didn’t change, but its real power shrank. Investing is one way people try to grow money faster than inflation erodes it.",
+    followUp: "Curious how people decide how much to keep safe versus invested?",
+    chips: ["What are bonds?", "What does low risk low reward mean?"],
   },
   {
     id: "bonds",
-    keywords: ["bond", "bonds", "agg", "fixed income", "lend money", "loan to", "government bond", "corporate bond"],
+    keywords: ["bond", "bonds", "agg", "fixed income", "lend money", "loan to"],
     answer:
-      "A bond is basically a loan you give — to a government or a big company — and in return they pay you steady interest and give your money back later. Because that income is agreed up front, bonds usually move around a lot less than stocks: smaller ups, smaller downs, a calmer ride. The trade-off is that the reward is usually smaller too. They’re not risk-free — in 2022, rising interest rates gave bonds a rare rough year — but overall they’re the classic “steadier” building block many people mix with stocks to smooth out the bumps.",
-    followUp: "Want to see how a mostly-bonds mix looks next to a bumpy one? Try the “Mostly safe” preset in the Simulate tab.",
-    chips: ["What does low risk low reward mean?", "What is diversification?", "How much of my money should be safe vs invested?"],
+      "A bond is basically a loan you give — to a government or a big company — and in return they pay you steady interest and give your money back later. Because that income is agreed up front, bonds usually move around a lot less than stocks: smaller ups, smaller downs, a calmer ride. The trade-off is that the reward is usually smaller too. They’re the classic “steadier” building block people mix with stocks.",
+    followUp: "Want to see a mostly-bonds mix next to a bumpy one? Try the “Mostly safe” preset.",
+    chips: ["What does low risk low reward mean?", "What is diversification?"],
   },
   {
     id: "lowrisk",
     keywords: ["low risk", "low reward", "risk reward", "risk and reward", "risk vs reward", "solid choice", "defensive", "safe investment", "safer option"],
     answer:
-      "“Low risk, low reward” is one of investing’s most honest rules: the calmer and safer an investment is, the smaller its likely payoff — and the other way around. Something steady like a bond ETF tends to grow slowly without scary drops, while something bold like a tech-heavy index can soar but also plunge. Neither is “better” — they’re different tools for different jobs. That’s exactly why people often mix them: some steady ballast for calm, some growth for reward. The right balance depends on you, so I can explain the trade-off but can’t pick it for you.",
-    followUp: "Want to see the calm-vs-bumpy contrast? Try splitting between the Bond ETF and NASDAQ in the Simulate tab.",
-    chips: ["What are bonds?", "What is diversification?", "What does volatility mean?"],
+      "“Low risk, low reward” is one of investing’s most honest rules: the calmer and safer an investment is, the smaller its likely payoff — and vice versa. Something steady like a bond ETF grows slowly without scary drops; something bold like a tech-heavy index can soar but also plunge. Neither is “better” — they’re tools for different jobs. That’s why people often mix them: some steady ballast, some growth.",
+    followUp: "Want to feel the contrast? Try splitting the Bond ETF with the NASDAQ.",
+    chips: ["What are bonds?", "What is diversification?"],
   },
   {
     id: "split",
     keywords: ["safe vs", "how much should be safe", "emergency fund", "allocation", "safe or invested", "how much of my money"],
     answer:
-      "This is a smart thing to think about, and I’ll share the general framework people are taught — though the right split is genuinely personal, and I can’t decide it for you. A widely taught starting principle is the “emergency fund”: keeping roughly 3–6 months of essential expenses in safe, easy-to-reach cash before investing the rest. Beyond that, many people balance steadier holdings (like bonds) with growth ones (like stocks) to match their comfort with ups and downs. A hands-on way to feel that trade-off: try the “Mostly safe” preset in the Simulate tab and watch how a calmer mix behaves.",
-    followUp: "Want me to explain what bonds are, or why that cash cushion protects you during a market drop?",
-    chips: ["What are bonds?", "What happens if the market drops after I invest?", "What does low risk low reward mean?"],
+      "Here’s the general framework people are taught — though the right split is genuinely personal, and I can’t decide it for you. A widely taught starting principle is the “emergency fund”: keeping roughly 3–6 months of essential expenses in safe, easy-to-reach cash before investing the rest. Beyond that, many people balance steadier holdings (like bonds) with growth ones (like stocks) to match their comfort with ups and downs.",
+    followUp: "Want to feel that trade-off? Try the “Mostly safe” preset in the Simulator.",
+    chips: ["What are bonds?", "What does low risk low reward mean?"],
   },
 ];
 
-/* ------------------------------------------------------------
-   Opening greeting + the starting chips.
-   Chips deliberately include a guardrail-triggering option so an
-   interviewer meets the guardrail moment within a couple of clicks.
-   ------------------------------------------------------------ */
-const GREETING =
-  "Hi, I’m the P2Pi Coach 👋 I’m here to explain investing in plain, jargon-free language — no pressure and no judgment, just answers. I can’t tell you what to do with your money, but I can help you understand how it all works so your choices are truly yours.";
-
-const STARTER_CHIPS = [
-  "I have ₪1,000 and I’m scared to start. Where do I begin?",
-  "What is leverage?",
-  "What happens if the market drops after I invest?",
-  "Should I use 4x leverage?",
-];
-
-// Fallback follow-up chips reused when we don't have topic-specific ones.
-const FALLBACK_CHIPS = [
-  "What is leverage?",
-  "What does volatility mean?",
-  "Why invest at all instead of keeping cash?",
-];
-
 /* ============================================================
-   RENDERING / PLUMBING
+   RENDERING / PLUMBING (targets the Coach panel in the Simulate tab)
    ============================================================ */
-const chatEl = document.getElementById("chat");
-const chipsEl = document.getElementById("chips");
-const formEl = document.getElementById("composer");
-const inputEl = document.getElementById("input");
-const sendBtn = document.getElementById("send-btn");
+const coachChat = document.getElementById("coach-chat");
+const coachChips = document.getElementById("coach-chips");
+const coachComposer = document.getElementById("coach-composer");
+const coachInput = document.getElementById("coach-input");
+const coachSend = document.getElementById("coach-send");
+const coachPanel = document.getElementById("coach-panel");
+const coachFab = document.getElementById("coach-fab");
+const coachBackdrop = document.getElementById("coach-backdrop");
+const coachClose = document.getElementById("coach-close");
+const coachHint = document.getElementById("coach-hint");
 
-let busy = false; // prevents overlapping messages while the coach "types"
+let busy = false;          // prevents overlapping messages while "typing"
+let currentContext = null; // the latest SimulationContext
 
-// Smoothly scroll the chat to the newest content.
-function scrollDown() {
-  chatEl.scrollTop = chatEl.scrollHeight;
-}
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+function scrollDown() { if (coachChat) coachChat.scrollTop = coachChat.scrollHeight; }
 
-// Add a user message bubble (right-aligned).
 function addUserMessage(text) {
   const row = document.createElement("div");
   row.className = "msg-row user";
@@ -230,32 +315,29 @@ function addUserMessage(text) {
   bubble.className = "bubble user";
   bubble.textContent = text;
   row.appendChild(bubble);
-  chatEl.appendChild(row);
+  coachChat.appendChild(row);
   scrollDown();
 }
 
-// Show the "Coach is thinking…" indicator; returns the element so we can remove it.
 function showTyping() {
   const row = document.createElement("div");
   row.className = "msg-row coach";
-  row.innerHTML = `
-    <div class="avatar">π</div>
-    <div class="bubble coach"><div class="typing"><span></span><span></span><span></span></div></div>`;
-  chatEl.appendChild(row);
+  row.innerHTML =
+    `<div class="avatar">π</div>` +
+    `<div class="bubble coach"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  coachChat.appendChild(row);
   scrollDown();
   return row;
 }
 
-// Stream text word-by-word into a coach bubble to mimic a live LLM.
 function streamCoachMessage(text, followUp) {
   return new Promise((resolve) => {
     const row = document.createElement("div");
     row.className = "msg-row coach";
     row.innerHTML = `<div class="avatar">π</div><div class="bubble coach"><span class="stream"></span><span class="caret">▌</span></div>`;
-    chatEl.appendChild(row);
+    coachChat.appendChild(row);
     const streamEl = row.querySelector(".stream");
     const caret = row.querySelector(".caret");
-
     const words = text.split(" ");
     let i = 0;
     const timer = setInterval(() => {
@@ -274,12 +356,11 @@ function streamCoachMessage(text, followUp) {
         scrollDown();
         resolve();
       }
-    }, 45); // ~word delay; feels like typing without being slow
+    }, 40);
   });
 }
 
-// Render the distinct GUARDRAIL card (friendly-protective: soft accent
-// border, shield, reframe + chip). Feels caring, not alarming.
+// The distinct GUARDRAIL card (friendly-protective). chip = {label, intent}.
 function renderGuardrail(reframe) {
   const row = document.createElement("div");
   row.className = "msg-row coach";
@@ -296,51 +377,77 @@ function renderGuardrail(reframe) {
   row.querySelector(".gr-body").textContent = reframe.body;
   row.querySelector(".gr-reframe").textContent = reframe.offer;
 
-  // An inline chip that accepts the educational reframe.
   const chip = document.createElement("button");
   chip.className = "chip inline";
   chip.type = "button";
-  chip.textContent = reframe.chip;
-  chip.addEventListener("click", () => handleSubmit(reframe.chip));
+  chip.textContent = reframe.chip.label;
+  chip.addEventListener("click", () => handleSubmit(reframe.chip.label, reframe.chip.intent));
   row.querySelector(".guardrail").appendChild(chip);
 
-  chatEl.appendChild(row);
+  coachChat.appendChild(row);
   scrollDown();
 }
 
-// Replace the suggestion chips under the chat.
-function renderChips(list) {
-  chipsEl.innerHTML = "";
-  list.forEach((label) => {
+// Render chips. Items may be plain strings (free-text questions) or
+// {label, onClick} objects (context intents / preset bridges).
+function renderCoachChips(list) {
+  coachChips.innerHTML = "";
+  (list || []).forEach((item) => {
     const chip = document.createElement("button");
     chip.className = "chip";
     chip.type = "button";
-    chip.textContent = label;
-    chip.addEventListener("click", () => handleSubmit(label));
-    chipsEl.appendChild(chip);
+    chip.textContent = typeof item === "string" ? item : item.label;
+    chip.addEventListener("click", typeof item === "string" ? () => handleSubmit(item) : item.onClick);
+    coachChips.appendChild(chip);
   });
 }
 
 /* ------------------------------------------------------------
-   MATCHING LOGIC
+   CONTEXT chips + answers
    ------------------------------------------------------------ */
-function isAdviceSeeking(text) {
-  return ADVICE_PATTERNS.some((re) => re.test(text));
+function cchip(label, intent) {
+  return { label, intent, onClick: () => handleSubmit(label, intent) };
 }
+function contextChips(ctx) {
+  if (!ctx) return [];
+  const specific = [];
+  if (ctx.marginCall.happened) specific.push(cchip("What just happened to my money?", "margincall"));
+  if (ctx.worstYear.drop > 0 && ["2000", "2008", "2020", "2022"].includes(String(ctx.worstYear.year))) {
+    specific.push(cchip(`Why did everything drop in ${ctx.worstYear.year}?`, "worstyear"));
+  }
+  if (ctx.leverage > 1) specific.push(cchip("What would 1x have looked like?", "leveragecompare"));
+  if (ctx.assets.length === 1) specific.push(cchip("What if I had split my money?", "diversify"));
+  // Always keep one general chip.
+  return [...specific.slice(0, 3), cchip("Explain my result in simple words", "explain")];
+}
+
+async function renderContextAnswer(intent, ctx) {
+  if (intent === "diversify") {
+    const { text, presetChip } = ctxDiversify(ctx);
+    await streamCoachMessage(text, null);
+    renderCoachChips([
+      { label: presetChip.label, onClick: () => { if (window.P2PI_loadSimulatorPreset) window.P2PI_loadSimulatorPreset(presetChip.preset, "the Coach"); } },
+      ...contextChips(ctx).filter((c) => c.intent !== "diversify"),
+    ]);
+    return;
+  }
+  const builders = { explain: ctxExplain, worstyear: ctxWorstYear, margincall: ctxMarginCall, leveragecompare: ctxLeverageCompare };
+  await streamCoachMessage(builders[intent](ctx), null);
+  renderCoachChips(contextChips(ctx));
+}
+
+/* ------------------------------------------------------------
+   MATCHING
+   ------------------------------------------------------------ */
+function isAdviceSeeking(text) { return ADVICE_PATTERNS.some((re) => re.test(text)); }
 
 function matchQA(text) {
   const t = text.toLowerCase();
-  let best = null;
-  let bestScore = 0;
+  let best = null, bestScore = 0;
   for (const entry of QA_BANK) {
     let score = 0;
-    for (const kw of entry.keywords) {
-      if (t.includes(kw.toLowerCase())) score++;
-    }
-    if (score > bestScore) {
-      bestScore = score;
-      best = entry;
-    }
+    for (const kw of entry.keywords) if (t.includes(kw.toLowerCase())) score++;
+    if (score > bestScore) { bestScore = score; best = entry; }
   }
   return bestScore > 0 ? best : null;
 }
@@ -348,69 +455,120 @@ function matchQA(text) {
 /* ------------------------------------------------------------
    MAIN TURN HANDLER
    ------------------------------------------------------------ */
-async function handleSubmit(rawText) {
+async function handleSubmit(rawText, forcedIntent) {
   const text = (rawText || "").trim();
   if (!text || busy) return;
 
   busy = true;
-  sendBtn.disabled = true;
-  inputEl.value = "";
+  if (coachSend) coachSend.disabled = true;
+  if (coachInput) coachInput.value = "";
   addUserMessage(text);
-  chipsEl.innerHTML = ""; // clear chips while the coach responds
+  coachChips.innerHTML = "";
 
-  // Reward curiosity: +1 P2Pi coin for every question asked (shared state).
+  // +1 P2Pi coin per question (preserved in the Coach's new home).
   P2Pi.addCoins(1);
   if (typeof showCoinToast === "function") showCoinToast(1, false);
 
-  // Brief pause + typing indicator so it feels like a live model thinking.
   const typing = showTyping();
-  await wait(650 + Math.min(text.length * 8, 500));
+  await wait(600 + Math.min(text.length * 8, 400));
   typing.remove();
 
   // 1) GUARDRAIL first — advice-seeking never gets a direct answer.
   if (isAdviceSeeking(text)) {
-    renderGuardrail(reframeFor(text));
-    renderChips(["What is leverage?", "What does volatility mean?", "How much of my money should be safe vs invested?"]);
+    renderGuardrail(reframeFor(text, currentContext));
+    renderCoachChips(contextChips(currentContext));
     finishTurn();
     return;
   }
 
-  // 2) Try to match the scripted educational bank.
+  // 2) Results-aware intent (only when a result is on screen and applicable).
+  const intent = forcedIntent || (currentContext ? matchContextIntent(text) : null);
+  if (intent && currentContext && intentApplies(intent, currentContext)) {
+    await renderContextAnswer(intent, currentContext);
+    finishTurn();
+    return;
+  }
+
+  // 3) General educational bank.
   const match = matchQA(text);
   if (match) {
     await streamCoachMessage(match.answer, match.followUp);
-    renderChips(match.chips || FALLBACK_CHIPS);
+    renderCoachChips(match.chips);
     finishTurn();
     return;
   }
 
-  // 3) Graceful fallback for anything we don't recognize.
+  // 4) Graceful fallback.
   await streamCoachMessage(
-    "That’s a good question — but I’m a demo coach with a limited set of scripted topics, so I don’t have a great answer for that one yet. In the real product I’d be able to handle it. In the meantime, here are a few things I can explain really well:",
+    "That’s a good question — I’m a demo coach with a limited set of scripted topics, so I don’t have a great answer for that one yet. Here are a few things I can explain about your result:",
     null
   );
-  renderChips(STARTER_CHIPS);
+  renderCoachChips(contextChips(currentContext));
   finishTurn();
 }
 
 function finishTurn() {
   busy = false;
-  sendBtn.disabled = false;
-  inputEl.focus();
+  if (coachSend) coachSend.disabled = false;
+  if (coachInput) coachInput.focus();
   scrollDown();
 }
 
-function wait(ms) {
-  return new Promise((r) => setTimeout(r, ms));
+/* ------------------------------------------------------------
+   PUBLIC API — simulate.js calls this after every run
+   ------------------------------------------------------------ */
+window.P2PICoach = {
+  onSimulation(ctx) {
+    currentContext = ctx;
+    busy = false;
+    if (!coachChat) return;
+    coachChat.innerHTML = "";
+    coachChips.innerHTML = "";
+    if (coachHint) coachHint.hidden = true;      // results exist now
+    if (coachFab) coachFab.hidden = false;       // mobile entry point
+    introFor(ctx);
+  },
+  reset() {
+    currentContext = null;
+    if (coachChat) coachChat.innerHTML = "";
+    if (coachChips) coachChips.innerHTML = "";
+  },
+};
+
+async function introFor(ctx) {
+  const typing = showTyping();
+  await wait(500);
+  typing.remove();
+  await streamCoachMessage("Nice — your simulation’s done, and I can see exactly what happened. Ask me anything about it 👇", null);
+  renderCoachChips(contextChips(ctx));
 }
 
 /* ------------------------------------------------------------
-   WIRING: form submit, modal, initial greeting
+   WIRING: composer, tabs, modal, coach bottom-sheet, reset
    ------------------------------------------------------------ */
-formEl.addEventListener("submit", (e) => {
-  e.preventDefault();
-  handleSubmit(inputEl.value);
-});
+if (coachComposer) {
+  coachComposer.addEventListener("submit", (e) => {
+    e.preventDefault();
+    handleSubmit(coachInput.value);
+  });
+}
+
+// Mobile bottom-sheet open/close.
+function openCoachSheet() {
+  if (!coachPanel) return;
+  coachPanel.classList.add("open");
+  if (coachBackdrop) coachBackdrop.hidden = false;
+  if (coachInput) coachInput.focus();
+  scrollDown();
+}
+function closeCoachSheet() {
+  if (!coachPanel) return;
+  coachPanel.classList.remove("open");
+  if (coachBackdrop) coachBackdrop.hidden = true;
+}
+if (coachFab) coachFab.addEventListener("click", openCoachSheet);
+if (coachClose) coachClose.addEventListener("click", closeCoachSheet);
+if (coachBackdrop) coachBackdrop.addEventListener("click", closeCoachSheet);
 
 // Tab switching: show one panel at a time, highlight the active tab.
 const tabButtons = document.querySelectorAll(".tab");
@@ -425,50 +583,31 @@ tabButtons.forEach((btn) => {
     document.querySelectorAll(".panel").forEach((p) => {
       p.hidden = p.id !== "panel-" + target;
     });
-    // Re-focus the input when returning to the coach.
-    if (target === "learn") inputEl.focus();
+    if (target !== "simulate") closeCoachSheet(); // tidy the sheet when leaving
   });
 });
 
-// "How this works" modal
+// "How this works" modal.
 const overlay = document.getElementById("modal-overlay");
 document.getElementById("how-link").addEventListener("click", () => (overlay.hidden = false));
 document.getElementById("modal-close").addEventListener("click", () => (overlay.hidden = true));
-overlay.addEventListener("click", (e) => {
-  if (e.target === overlay) overlay.hidden = true;
-});
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") overlay.hidden = true;
-});
+overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.hidden = true; });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { overlay.hidden = true; closeCoachSheet(); } });
 
-// First-visit hello card (Learn tab) — dismissible, shown once per browser.
-const helloCard = document.getElementById("hello-card");
-if (helloCard) {
-  if (!P2Pi.hasFlag("seen_hello")) helloCard.hidden = false;
-  document.getElementById("hello-dismiss").addEventListener("click", () => {
-    helloCard.hidden = true;
-    P2Pi.setFlag("seen_hello");
+// "Reset demo" link inside the modal — clean slate for the next student.
+const resetLink = document.getElementById("reset-link");
+if (resetLink) {
+  resetLink.addEventListener("click", () => {
+    P2Pi.reset();                 // wipe coins + all progress flags
+    window.P2PICoach.reset();     // clear the coach conversation + context
+    const results = document.getElementById("sim-results");
+    if (results) results.hidden = true;
+    if (coachHint) coachHint.hidden = false;
+    if (coachFab) coachFab.hidden = true;
+    closeCoachSheet();
+    overlay.hidden = true;
+    if (window.P2PILearn) window.P2PILearn.refresh();       // reset course cards
+    const learnTab = document.querySelector('.tab[data-tab="learn"]');
+    if (learnTab) learnTab.click();
   });
 }
-
-// "Reset demo" link inside the modal — clears coins + chat for the next student.
-document.getElementById("reset-link").addEventListener("click", () => {
-  P2Pi.reset();                         // wipe coins + one-time flags
-  chatEl.innerHTML = "";                // clear the conversation
-  overlay.hidden = true;                // close the modal
-  if (helloCard) helloCard.hidden = false; // re-greet the next student
-  startCoachConversation();             // fresh greeting + starter chips
-});
-
-// Greet the user, then show starter chips. Reusable so "Reset demo" can
-// start a clean conversation without a page reload.
-async function startCoachConversation() {
-  const typing = showTyping();
-  await wait(700);
-  typing.remove();
-  await streamCoachMessage(GREETING, null);
-  renderChips(STARTER_CHIPS);
-  inputEl.focus();
-}
-
-startCoachConversation();

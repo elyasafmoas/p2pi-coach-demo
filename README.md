@@ -25,24 +25,32 @@ happens to their money and are afraid of doing something wrong. P2Pi removes the
 The demo is a mobile-first, single-page app with a tab bar (bottom on phones, top on
 desktop):
 
-### 💬 Learn — the Coach
-A branded chat coach that greets the student and answers common beginner questions
-(leverage, volatility, the S&P 500, fees, inflation, market drops, where to begin) in
-warm, plain language — with a simulated "thinking" pause and word-by-word streaming so it
-feels like a live AI. Suggested-question chips make it easy to explore.
+The architecture: **Learn = learn it, Simulate = do it + ask about it, My Coins = rewards.**
 
-**The guardrail is the heart of the demo.** When a student asks for *personal advice*
-("Should I use 4x leverage?", "Just tell me what to buy", "Is now a good time to invest?"),
-the coach **does not answer**. It shows a friendly-protective **guardrail card** — white
-card, magenta border, shield icon, *"We teach, we don't tell you what to buy"* — and offers
-to explain the underlying concept instead. The AI explains *how leverage works*, but never
-*how much leverage to use with your money*.
+### 📚 Learn — the course marketplace
+A grid of short, playful **courses** — Finance 101, Investments 101, Leverage 101 — each a
+handful of bite-size lessons ending in a quick quiz. Passing a quiz completes a lesson
+(**+2 coins**); finishing a course gives a **+5** bonus. Progress persists in the browser.
+Relevant lessons end with a magenta **"try it in the Simulator"** button that jumps to the
+Simulate tab with the right values pre-loaded (e.g. *"Trigger a margin call safely →"*).
 
-### 📈 Simulate — a historical time machine
+### 📈 Simulate — do it, then ask the Coach
 Pick **one or more assets** — S&P 500, NASDAQ, Dow Jones, Israel's TA-35, or the defensive
 **Bond ETF (AGG)** — an **amount** (₪100–₪10,000), a **starting year** (the slider adapts to
 the earliest reliable data of your picks — e.g. TA-35 starts in 2000, the Bond ETF in 2004),
 and a **leverage** level (1x–5x), then hit *"Show me what would've happened."*
+
+**The Coach now lives here, and it's results-aware.** Once a simulation runs, a Coach panel
+appears (a right-hand column on desktop, a tap-up **bottom-sheet** on mobile). Its suggested
+questions are generated from *your* result — e.g. *"What just happened to my money?"* after a
+margin call, *"Why did everything drop in 2008?"*, *"What would 1x have looked like?"* — and
+its answers interpolate your actual numbers (including a computed 1x-vs-leverage comparison).
+
+**The guardrail is still the heart of the demo.** Ask for *personal advice* ("what should I
+buy", "which asset is best", "should I add leverage") and the Coach **does not answer** — it
+shows the friendly-protective **guardrail card** (*"We teach, we don't tell you what to
+buy"*), now context-aware: *"I can explain what leverage DID to this result — deciding what
+to do next is yours."*
 
 **Portfolio splitting:** tap multiple assets to build a portfolio (1–4). An allocation panel
 appears with a slider per asset (always summing to 100%, with a live donut chart) and quick
@@ -84,11 +92,13 @@ It's a plain static site, so GitHub Pages serves it as-is:
 
 ## Try these (to feel the product)
 
-- Ask *"What is leverage?"* → a plain explanation with a quick ₪1,000-at-4x example.
-- Type *"Should I use 4x leverage?"* → the **guardrail card**, not an answer.
-- Simulate **₪1,000 from 2015 at 1x** → a plausible, encouraging S&P result.
-- Simulate **₪1,000 from 2007 at 5x** → the **margin-call teaching moment**.
-- Open **My Coins** to watch the balance climb as you explore.
+- In **Learn**, play a Finance 101 lesson → pass the quiz → watch coins land.
+- In **Simulate**, run **₪1,000 in S&P 500 from 2007 at 4x** → the **margin-call card** →
+  ask the Coach *"What just happened to my money?"* → it answers with **your** numbers and a
+  1x comparison.
+- Then type *"what should I buy"* → the **guardrail card**, not an answer.
+- Simulate a **50/50 S&P + Bond ETF** split → see the **diversification callout**.
+- Open **My Coins** to watch the balance climb as you learn and explore.
 
 ## How it would work in production
 
@@ -110,14 +120,16 @@ work; the decision always belongs to the person.
 |------|---------|
 | [`index.html`](index.html) | Page structure: header, tabs, three panels, modal. |
 | [`style.css`](style.css) | Vivid magenta-on-white brand (Lemonade-inspired); all colors are `:root` variables. |
-| [`app.js`](app.js) | The Coach: guardrail rules, Q&A bank, streaming, chips, onboarding, reset. |
-| [`simulate.js`](simulate.js) | The Simulator: leverage math, margin calls, SVG chart, count-up. |
+| [`app.js`](app.js) | The results-aware **Coach** (in the Simulate tab): guardrail rules, context answers, general Q&A bank, streaming, chips. |
+| [`simulate.js`](simulate.js) | The Simulator: multi-asset leverage math, margin calls, SVG chart, count-up, and the `SimulationContext` it hands the Coach. |
+| [`learn.js`](learn.js) | The Learn course marketplace: course/lesson/quiz UI, progress, and the "try it in the Simulator" bridge. |
+| [`data/courses.js`](data/courses.js) | Course content (Finance 101, Investments 101, Leverage 101) — PM-editable. |
 | [`coins.js`](coins.js) | My Coins tab: balance display and coin animation. |
 | [`store.js`](store.js) | Shared coin/flag state, persisted to `localStorage`. |
-| [`data/sp500_monthly.js`](data/sp500_monthly.js) | Approximate monthly S&P 500 values, 1985–2024, for the simulator. |
+| [`data/*.js`](data/) | Approximate monthly index data (S&P 500, NASDAQ, Dow, TA-35, Bond ETF), for the simulator. |
 
-Coach content and colors live in clearly-labeled structures at the top of their files so a
-non-engineer can read and edit them.
+Coach content, course content, and colors live in clearly-labeled structures at the top of
+their files so a non-engineer can read and edit them.
 
 ## Disclaimer
 

@@ -8,7 +8,7 @@
   <!-- ?v= is a cache-buster: bump it on every deploy so browsers never mix a
        new index.html with a stale cached script/style from a previous deploy
        (the root cause of the empty-asset-picker bug). -->
-  <link rel="stylesheet" href="style.css?v=stage32" />
+  <link rel="stylesheet" href="style.css?v=stage33" />
 </head>
 <body>
   <!-- ============ HEADER ============ -->
@@ -27,7 +27,7 @@
   <!-- ============ TAB NAVIGATION (top on desktop, bottom on mobile) ============ -->
   <nav class="tabs" id="tabs" role="tablist" aria-label="Main sections">
     <button class="tab active" data-tab="learn" role="tab" aria-selected="true">
-      <span class="tab-icon">💬</span><span class="tab-label">Learn</span>
+      <span class="tab-icon">📚</span><span class="tab-label">Learn</span>
     </button>
     <button class="tab" data-tab="simulate" role="tab" aria-selected="false">
       <span class="tab-icon">📈</span><span class="tab-label">Simulate</span>
@@ -49,36 +49,7 @@
       </div>
     </section>
 
-    <!-- ---- Coach chat (preserved intact, hidden for now; it moves to its own
-         home in a later stage — do not remove). app.js still drives it. ---- -->
-    <section class="panel" id="panel-coach" role="tabpanel" hidden aria-hidden="true">
-      <!-- First-visit welcome (dismissible, shown once per browser) -->
-      <div class="hello-card" id="hello-card" hidden>
-        <button class="hello-dismiss" id="hello-dismiss" aria-label="Dismiss">&times;</button>
-        <span>Hi! I'm the P2Pi Coach 👋 Ask me anything about investing — then try the Simulator.</span>
-      </div>
-
-      <main class="chat" id="chat" aria-live="polite">
-        <!-- Messages injected by app.js -->
-      </main>
-
-      <div class="chips" id="chips" aria-label="Suggested questions">
-        <!-- Chips injected by app.js -->
-      </div>
-
-      <form class="composer" id="composer" autocomplete="off">
-        <input
-          type="text"
-          id="input"
-          class="composer-input"
-          placeholder="Ask the coach anything…"
-          aria-label="Message the coach"
-        />
-        <button type="submit" class="send-btn" id="send-btn" aria-label="Send">Send</button>
-      </form>
-    </section>
-
-    <!-- ---- Tab 2: Simulate (historical S&P 500 time machine) ---- -->
+    <!-- ---- Tab 2: Simulate (historical time machine + contextual Coach) ---- -->
     <section class="panel scrollable" id="panel-simulate" role="tabpanel" hidden>
       <div class="sim-inner">
 
@@ -133,35 +104,60 @@
           </div>
 
           <button class="run-btn" id="run-btn" type="button">Show me what would've happened</button>
+          <p class="coach-hint" id="coach-hint">💬 Run a simulation — then ask the Coach about it.</p>
         </div>
 
-        <!-- Results (revealed after a run) -->
+        <!-- Results (revealed after a run). On desktop this becomes a
+             two-column layout: results left, contextual Coach right. -->
         <div class="sim-results" id="sim-results" hidden>
-          <div class="result-headline">
-            <span class="result-label">If you'd invested <span id="r-amount"></span> in
-              <span id="r-asset"></span> in <span id="r-year"></span>, today you'd have</span>
-            <span class="result-value num-key" id="r-final">₪0</span>
-            <span class="result-pl">
-              <span id="r-profit"></span> <span id="r-pct"></span>
-            </span>
+          <div class="results-layout">
+            <div class="results-main">
+              <div class="result-headline">
+                <span class="result-label">If you'd invested <span id="r-amount"></span> in
+                  <span id="r-asset"></span> in <span id="r-year"></span>, today you'd have</span>
+                <span class="result-value num-key" id="r-final">₪0</span>
+                <span class="result-pl">
+                  <span id="r-profit"></span> <span id="r-pct"></span>
+                </span>
+              </div>
+
+              <div class="chart-legend" id="chart-legend"></div>
+              <div class="chart-wrap" id="chart-wrap"></div>
+
+              <!-- Per-asset breakdown (shown for 2+ assets) -->
+              <div class="breakdown" id="breakdown" hidden></div>
+
+              <p class="worst-note" id="worst-note" hidden></p>
+              <!-- Diversification teaching callout (only when it's actually true) -->
+              <div class="diversify-note" id="diversify-note" hidden></div>
+              <div class="margin-card" id="margin-card" hidden></div>
+
+              <p class="sim-disclaimer">Simulated from approximate historical data, for learning
+                only — not a prediction and not advice.</p>
+            </div>
+
+            <!-- Contextual Coach: right column on desktop, bottom-sheet on mobile -->
+            <aside class="coach-panel" id="coach-panel" aria-label="Ask the Coach">
+              <div class="coach-head">
+                <span>Ask me about your results 👋</span>
+                <button class="coach-close" id="coach-close" type="button" aria-label="Close">&times;</button>
+              </div>
+              <div class="chat coach-chat" id="coach-chat" aria-live="polite"></div>
+              <div class="chips" id="coach-chips" aria-label="Suggested questions"></div>
+              <form class="composer" id="coach-composer" autocomplete="off">
+                <input type="text" id="coach-input" class="composer-input"
+                  placeholder="Ask about your result…" aria-label="Ask the coach" />
+                <button type="submit" class="send-btn" id="coach-send" aria-label="Send">Send</button>
+              </form>
+            </aside>
           </div>
-
-          <div class="chart-legend" id="chart-legend"></div>
-          <div class="chart-wrap" id="chart-wrap"></div>
-
-          <!-- Per-asset breakdown (shown for 2+ assets) -->
-          <div class="breakdown" id="breakdown" hidden></div>
-
-          <p class="worst-note" id="worst-note" hidden></p>
-          <!-- Diversification teaching callout (only when it's actually true) -->
-          <div class="diversify-note" id="diversify-note" hidden></div>
-          <div class="margin-card" id="margin-card" hidden></div>
-
-          <p class="sim-disclaimer">Simulated from approximate historical data, for learning
-            only — not a prediction and not advice.</p>
         </div>
 
       </div>
+
+      <!-- Mobile entry point + backdrop for the Coach bottom-sheet -->
+      <button class="coach-fab" id="coach-fab" type="button" hidden>Ask the Coach 💬</button>
+      <div class="coach-backdrop" id="coach-backdrop" hidden></div>
     </section>
 
     <!-- ---- Tab 3: My Coins ---- -->
@@ -206,25 +202,23 @@
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
       <h2 id="modal-title">How this works</h2>
-      <p>
-        This is a <strong>friendly demo</strong> for the classroom. Every coach reply is
-        <strong>scripted</strong> — there's no live AI, no backend, and no accounts. The
-        "thinking…" pause and word-by-word reveal are simulated to make it <em>feel</em> like
-        a real AI coach.
-      </p>
-      <p>In the real product, the same experience would use:</p>
+      <p>This is a <strong>friendly classroom demo</strong> — no live AI, no backend, no
+        accounts. It has three parts:</p>
       <ul>
-        <li><strong>An AI model</strong> for natural, plain-language conversation.</li>
-        <li><strong>Trusted lesson content</strong> the AI is only allowed to teach from, so
-          answers stay accurate and safe.</li>
-        <li><strong>A safety layer</strong> that spots when someone is asking for personal
-          advice and steps in before answering.</li>
+        <li><strong>📚 Learn</strong> — short courses with quizzes that teach the basics.</li>
+        <li><strong>📈 Simulate</strong> — <em>do</em> it: replay real market history with
+          pretend shekels, then <em>ask</em> the built-in Coach about your own result.</li>
+        <li><strong>🪙 My Coins</strong> — rewards you earn for learning and exploring.</li>
       </ul>
+      <p>The Coach's replies are <strong>scripted</strong>, and the "thinking…" pause and
+        word-by-word reveal are simulated to make it <em>feel</em> like a real AI coach. In the
+        real product this would be an AI model grounded in trusted lesson content, with a
+        safety layer that spots advice-seeking before answering.</p>
       <p class="principle">
-        Our golden rule: <strong>the coach teaches how things work, but never tells you what
-        to do with your money.</strong> That choice always stays with you.
+        Our golden rule: <strong>the Coach explains how things work and what your result did,
+        but never tells you what to do with your money.</strong> That choice always stays with you.
       </p>
-      <button class="reset-link" id="reset-link" type="button">↺ Reset demo (clear coins &amp; chat)</button>
+      <button class="reset-link" id="reset-link" type="button">↺ Reset demo (clear coins &amp; progress)</button>
     </div>
   </div>
 
@@ -233,16 +227,16 @@
 
   <!-- Asset modules self-register into window.P2PI_ASSETS (order = display order).
        ?v= cache-buster is bumped on every deploy — see the note in <head>. -->
-  <script src="data/sp500.js?v=stage32"></script>
-  <script src="data/nasdaq.js?v=stage32"></script>
-  <script src="data/dow.js?v=stage32"></script>
-  <script src="data/ta35.js?v=stage32"></script>
-  <script src="data/agg.js?v=stage32"></script>
-  <script src="data/courses.js?v=stage32"></script>
-  <script src="store.js?v=stage32"></script>
-  <script src="app.js?v=stage32"></script>
-  <script src="simulate.js?v=stage32"></script>
-  <script src="coins.js?v=stage32"></script>
-  <script src="learn.js?v=stage32"></script>
+  <script src="data/sp500.js?v=stage33"></script>
+  <script src="data/nasdaq.js?v=stage33"></script>
+  <script src="data/dow.js?v=stage33"></script>
+  <script src="data/ta35.js?v=stage33"></script>
+  <script src="data/agg.js?v=stage33"></script>
+  <script src="data/courses.js?v=stage33"></script>
+  <script src="store.js?v=stage33"></script>
+  <script src="app.js?v=stage33"></script>
+  <script src="simulate.js?v=stage33"></script>
+  <script src="coins.js?v=stage33"></script>
+  <script src="learn.js?v=stage33"></script>
 </body>
 </html>
