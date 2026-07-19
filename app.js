@@ -159,12 +159,28 @@ const QA_BANK = [
     chips: ["How much of my money should be safe vs invested?", "What is the S&P 500?", "What does volatility mean?"],
   },
   {
-    id: "split",
-    keywords: ["safe vs", "how much should be safe", "emergency fund", "allocation", "split", "safe or invested", "how much of my money"],
+    id: "bonds",
+    keywords: ["bond", "bonds", "agg", "fixed income", "lend money", "loan to", "government bond", "corporate bond"],
     answer:
-      "This is a smart thing to think about, and I’ll share the general framework people are taught — though the right split is genuinely personal, and I can’t decide it for you. A widely taught starting principle is the “emergency fund”: keeping roughly 3–6 months of essential expenses in safe, easy-to-reach cash before investing the rest. The idea is that a cushion means a surprise bill won’t force you to sell investments at a bad moment. How much beyond that you invest depends on your goals, your timeline, and your comfort with ups and downs — all things only you can weigh.",
-    followUp: "Want me to explain why that cash cushion protects you during a market drop?",
-    chips: ["What happens if the market drops after I invest?", "Why invest at all instead of keeping cash?", "What does volatility mean?"],
+      "A bond is basically a loan you give — to a government or a big company — and in return they pay you steady interest and give your money back later. Because that income is agreed up front, bonds usually move around a lot less than stocks: smaller ups, smaller downs, a calmer ride. The trade-off is that the reward is usually smaller too. They’re not risk-free — in 2022, rising interest rates gave bonds a rare rough year — but overall they’re the classic “steadier” building block many people mix with stocks to smooth out the bumps.",
+    followUp: "Want to see how a mostly-bonds mix looks next to a bumpy one? Try the “Mostly safe” preset in the Simulate tab.",
+    chips: ["What does low risk low reward mean?", "What is diversification?", "How much of my money should be safe vs invested?"],
+  },
+  {
+    id: "lowrisk",
+    keywords: ["low risk", "low reward", "risk reward", "risk and reward", "risk vs reward", "solid choice", "defensive", "safe investment", "safer option"],
+    answer:
+      "“Low risk, low reward” is one of investing’s most honest rules: the calmer and safer an investment is, the smaller its likely payoff — and the other way around. Something steady like a bond ETF tends to grow slowly without scary drops, while something bold like a tech-heavy index can soar but also plunge. Neither is “better” — they’re different tools for different jobs. That’s exactly why people often mix them: some steady ballast for calm, some growth for reward. The right balance depends on you, so I can explain the trade-off but can’t pick it for you.",
+    followUp: "Want to see the calm-vs-bumpy contrast? Try splitting between the Bond ETF and NASDAQ in the Simulate tab.",
+    chips: ["What are bonds?", "What is diversification?", "What does volatility mean?"],
+  },
+  {
+    id: "split",
+    keywords: ["safe vs", "how much should be safe", "emergency fund", "allocation", "safe or invested", "how much of my money"],
+    answer:
+      "This is a smart thing to think about, and I’ll share the general framework people are taught — though the right split is genuinely personal, and I can’t decide it for you. A widely taught starting principle is the “emergency fund”: keeping roughly 3–6 months of essential expenses in safe, easy-to-reach cash before investing the rest. Beyond that, many people balance steadier holdings (like bonds) with growth ones (like stocks) to match their comfort with ups and downs. A hands-on way to feel that trade-off: try the “Mostly safe” preset in the Simulate tab and watch how a calmer mix behaves.",
+    followUp: "Want me to explain what bonds are, or why that cash cushion protects you during a market drop?",
+    chips: ["What are bonds?", "What happens if the market drops after I invest?", "What does low risk low reward mean?"],
   },
 ];
 

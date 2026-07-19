@@ -176,11 +176,13 @@ function buildChart(result) {
   const baseY = y(amount).toFixed(1);
   const endX = x(points.length - 1), endY = y(points[points.length - 1].equity);
 
-  // Per-asset lines (thin, in each asset's colour), hidden until toggled.
+  // Per-asset lines (thin, in each asset's colour). Hidden until toggled —
+  // EXCEPT a defensive asset (the Bond ETF), which shows by default so the
+  // flat-vs-bumpy contrast is visible at a glance.
   const legLines = multi ? legs.map((l) =>
     `<polyline class="leg-line" data-leg="${l.asset.id}" points="${toLine(l.equity)}"
        fill="none" stroke="${l.asset.color}" stroke-width="1.4"
-       stroke-linejoin="round" stroke-linecap="round" style="display:none"/>`).join("") : "";
+       stroke-linejoin="round" stroke-linecap="round" style="display:${l.asset.defensive ? "" : "none"}"/>`).join("") : "";
 
   let worstMarker = "";
   if (worst.drop > 0 && worst.index > 0) {
@@ -413,17 +415,33 @@ function countUp(el, target) {
     donutWrap.innerHTML = buildDonut(selected.map((a, i) => ({ color: a.color, pct: weights[i] })));
   }
 
-  // Preset chips just set slider values (no math for the student).
+  // Preset chips set the mix for the student (no math on their part).
   function setPreset(name) {
+    // "Mostly safe" is a concrete defensive portfolio: 70% Bond ETF / 30% S&P
+    // 500. Clicking it builds exactly that mix (adding those two indexes).
+    if (name === "safe") {
+      const bond = ASSETS.find((a) => a.id === "agg");
+      const sp = ASSETS.find((a) => a.id === "sp500");
+      if (bond && sp) {
+        selected = [bond, sp];
+        weights = [70, 30];
+        renderPicker();
+        renderAllocPanel();
+        adaptYearRange();
+        return;
+      }
+      // Fallback (bond data missing): just tilt toward the calmest picks below.
+    }
+
     const k = selected.length;
     if (name === "equal") {
       weights = equalWeightsFor(k);
     } else {
-      // Adventurousness rank: Dow (calmest) → NASDAQ (boldest).
-      const rank = { dow: 1, sp500: 2, ta35: 3, nasdaq: 4 };
+      // Adventurousness rank: Bond (calmest) → NASDAQ (boldest).
+      const rank = { agg: 0, dow: 1, sp500: 2, ta35: 3, nasdaq: 4 };
       const raw = selected.map((a) => {
-        const rk = rank[a.id] || 2;
-        return name === "safe" ? 5 - rk : rk; // safe favours calm, adventurous favours bold
+        const rk = rank[a.id] != null ? rank[a.id] : 2;
+        return name === "safe" ? 5 - rk : rk + 1; // safe favours calm, adventurous favours bold
       });
       const sum = raw.reduce((a, b) => a + b, 0);
       weights = raw.map((x) => Math.round((100 * x) / sum));
@@ -552,7 +570,8 @@ function countUp(el, target) {
     let html = `<span class="legend-item legend-total"><span class="legend-swatch" style="background:var(--color-primary)"></span>Total${multi ? " portfolio" : ""}</span>`;
     if (multi) {
       html += r.legs.map((l) =>
-        `<button type="button" class="legend-item leg-toggle" data-leg="${l.asset.id}">
+        // Defensive legs start "active" because their line shows by default.
+        `<button type="button" class="legend-item leg-toggle${l.asset.defensive ? " active" : ""}" data-leg="${l.asset.id}">
            <span class="legend-swatch" style="background:${l.asset.color}"></span>${l.asset.shortName}</button>`).join("");
       html += `<span class="legend-hint">tap to compare</span>`;
     }
