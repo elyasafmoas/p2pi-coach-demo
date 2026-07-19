@@ -723,6 +723,15 @@ document.getElementById("how-link").addEventListener("click", () => {
 document.getElementById("modal-close").addEventListener("click", () => (overlay.hidden = true));
 overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.hidden = true; });
 
+// "Redo my welcome" → re-run onboarding WITHOUT wiping progress.
+const redoWelcomeBtn = document.getElementById("redo-welcome-btn");
+if (redoWelcomeBtn) {
+  redoWelcomeBtn.addEventListener("click", () => {
+    closeSettings();
+    if (window.P2PIOnboarding) window.P2PIOnboarding.start();
+  });
+}
+
 // "Start over" → confirmation dialog → wipe everything → reload.
 const confirmOverlay = document.getElementById("confirm-overlay");
 const confirmCancel = document.getElementById("confirm-cancel");

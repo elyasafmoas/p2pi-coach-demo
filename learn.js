@@ -43,10 +43,20 @@
       <p class="learn-sub">Bite-size lessons that make money make sense. Pass a quick quiz to earn coins.</p>
       <div class="course-grid">`;
 
-    COURSES.forEach((c) => {
+    // The onboarding persona can recommend a course — badge it and float it to the top.
+    const rec = (window.P2Pi && P2Pi.getRecommendedCourse) ? P2Pi.getRecommendedCourse() : null;
+    const ordered = COURSES.slice();
+    if (rec) {
+      const i = ordered.findIndex((c) => c.id === rec);
+      if (i > 0) ordered.unshift(ordered.splice(i, 1)[0]);
+    }
+
+    ordered.forEach((c) => {
       const pct = coursePct(c);
       const label = pct === 0 ? "Start" : pct === 100 ? "Review ✓" : "Continue";
-      html += `<button class="course-card" data-course="${c.id}" type="button">
+      const recommended = c.id === rec;
+      html += `<button class="course-card${recommended ? " recommended" : ""}" data-course="${c.id}" type="button">
+          ${recommended ? `<span class="rec-badge">✨ Recommended for you</span>` : ""}
           <div class="cc-emoji">${c.emoji}</div>
           <div class="cc-title">${c.title}</div>
           <div class="cc-tag">${c.tagline}</div>

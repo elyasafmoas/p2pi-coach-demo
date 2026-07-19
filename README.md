@@ -20,6 +20,16 @@ it's **fear**. Young people hold cash on the sidelines because they don't unders
 happens to their money and are afraid of doing something wrong. P2π removes the fear by
 **building understanding first**, in plain, jargon-free language.
 
+## First impression: a conversational onboarding
+
+On a true first visit (or after **Start over**), the Coach opens a streamed, agent-style
+**welcome conversation**: it asks at most two quick questions ("What sounds most like you?" →
+read-first / try-first, or theory / crash-a-sim), then visibly **acts** — it badges a
+"Recommended for you" course on the Learn tab and/or pre-loads a simulation, then drops you
+right there. It's skippable ("Skip for now") and re-runnable anytime from **Settings →
+"Redo my welcome"** (without wiping progress). The persona is remembered so the recommended
+badge persists.
+
 ## The three tabs
 
 The demo is a mobile-first, single-page app with a tab bar (bottom on phones, top on
